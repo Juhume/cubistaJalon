@@ -1,0 +1,631 @@
+'use client'
+
+import React from "react"
+import { use, useState, useEffect, useRef, useCallback } from 'react'
+import Link from 'next/link'
+import Image from 'next/image'
+import { notFound } from 'next/navigation'
+import { MainLayout, useLocale } from '@/components/layout/main-layout'
+import { artworks, type Artwork } from '@/lib/artworks'
+import { useArtwork, useArtworks } from '@/lib/use-artworks'
+
+/* ─── Zoom Viewer ─── */
+
+function ZoomViewer({
+  imageUrl,
+  alt,
+  isOpen,
+  onClose,
+  locale,
+}: {
+  imageUrl: string
+  alt: string
+  isOpen: boolean
+  onClose: () => void
+  locale: 'es' | 'en'
+}) {
+  const containerRef = useRef<HTMLDivElement>(null)
+  const [scale, setScale] = useState(1)
+  const [position, setPosition] = useState({ x: 0, y: 0 })
+  const [isDragging, setIsDragging] = useState(false)
+  const wasDragging = useRef(false)
+  const dragStart = useRef({ x: 0, y: 0 })
+  const posStart = useRef({ x: 0, y: 0 })
+  const [visible, setVisible] = useState(false)
+
+  // Lock body scroll when open
+  useEffect(() => {
+    if (isOpen) {
+      const scrollY = window.scrollY
+      document.body.style.position = 'fixed'
+      document.body.style.top = `-${scrollY}px`
+      document.body.style.left = '0'
+      document.body.style.right = '0'
+      document.body.style.overflow = 'hidden'
+      setScale(1)
+      setPosition({ x: 0, y: 0 })
+      requestAnimationFrame(() => setVisible(true))
+
+      return () => {
+        document.body.style.position = ''
+        document.body.style.top = ''
+        document.body.style.left = ''
+        document.body.style.right = ''
+        document.body.style.overflow = ''
+        window.scrollTo(0, scrollY)
+      }
+    } else {
+      setVisible(false)
+    }
+  }, [isOpen])
+
+  // Native wheel listener — must be non-passive to preventDefault
+  useEffect(() => {
+    if (!isOpen) return
+    const el = containerRef.current
+    if (!el) return
+
+    const onWheel = (e: WheelEvent) => {
+      e.preventDefault()
+      e.stopPropagation()
+      setScale(prev => {
+        const next = prev - e.deltaY * 0.002
+        return Math.max(1, Math.min(5, next))
+      })
+    }
+
+    el.addEventListener('wheel', onWheel, { passive: false })
+    return () => el.removeEventListener('wheel', onWheel)
+  }, [isOpen])
+
+  // Pointer drag
+  const handlePointerDown = useCallback((e: React.PointerEvent) => {
+    if (scale <= 1) return
+    setIsDragging(true)
+    wasDragging.current = false
+    dragStart.current = { x: e.clientX, y: e.clientY }
+    posStart.current = { ...position }
+    ;(e.target as HTMLElement).setPointerCapture(e.pointerId)
+  }, [scale, position])
+
+  const handlePointerMove = useCallback((e: React.PointerEvent) => {
+    if (!isDragging) return
+    const dx = e.clientX - dragStart.current.x
+    const dy = e.clientY - dragStart.current.y
+    if (Math.abs(dx) > 3 || Math.abs(dy) > 3) {
+      wasDragging.current = true
+    }
+    setPosition({
+      x: posStart.current.x + dx,
+      y: posStart.current.y + dy,
+    })
+  }, [isDragging])
+
+  const handlePointerUp = useCallback(() => {
+    setIsDragging(false)
+  }, [])
+
+  // Click to toggle zoom — ignore if user was dragging
+  const handleClick = useCallback(() => {
+    if (wasDragging.current) return
+    if (scale > 1) {
+      setScale(1)
+      setPosition({ x: 0, y: 0 })
+    } else {
+      setScale(2.5)
+    }
+  }, [scale])
+
+  // Escape key
+  useEffect(() => {
+    if (!isOpen) return
+    const handleKey = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') onClose()
+    }
+    window.addEventListener('keydown', handleKey)
+    return () => window.removeEventListener('keydown', handleKey)
+  }, [isOpen, onClose])
+
+  if (!isOpen) return null
+
+  return (
+    <div
+      className="fixed inset-0 z-[70]"
+      style={{
+        opacity: visible ? 1 : 0,
+        transition: 'opacity 300ms var(--ease-out)',
+      }}
+    >
+      {/* Backdrop */}
+      <div className="absolute inset-0 bg-black/95" />
+
+      {/* Controls */}
+      <div className="absolute top-0 left-0 right-0 z-10 flex items-center justify-between py-5 px-5 sm:px-8">
+        <p className="font-body text-xs text-white/50">
+          {scale > 1
+            ? (locale === 'es' ? 'Arrastra para explorar' : 'Drag to explore')
+            : (locale === 'es' ? 'Click para ampliar' : 'Click to zoom in')
+          }
+        </p>
+        <button
+          onClick={onClose}
+          className="text-white/50 hover:text-white p-2"
+          style={{ transition: 'color var(--motion-fast) var(--ease-out)' }}
+          aria-label={locale === 'es' ? 'Cerrar' : 'Close'}
+        >
+          <svg viewBox="0 0 24 24" className="w-5 h-5" fill="none" stroke="currentColor" strokeWidth="1.5">
+            <path d="M6 6L18 18M6 18L18 6" />
+          </svg>
+        </button>
+      </div>
+
+      {/* Zoom level indicator */}
+      <div className="absolute bottom-6 left-1/2 -translate-x-1/2 z-10 flex items-center gap-3">
+        <button
+          onClick={() => { setScale(1); setPosition({ x: 0, y: 0 }) }}
+          className={`font-body text-xs py-1 px-2 ${scale <= 1 ? 'text-white' : 'text-white/40'}`}
+        >
+          1x
+        </button>
+        <div className="w-20 h-px bg-white/20 relative">
+          <div
+            className="absolute top-1/2 -translate-y-1/2 w-2 h-2 bg-[hsl(var(--accent))]"
+            style={{ left: `${((scale - 1) / 4) * 100}%`, transition: isDragging ? 'none' : 'left 150ms var(--ease-out)' }}
+          />
+        </div>
+        <button
+          onClick={() => setScale(5)}
+          className={`font-body text-xs py-1 px-2 ${scale >= 5 ? 'text-white' : 'text-white/40'}`}
+        >
+          5x
+        </button>
+      </div>
+
+      {/* Image canvas */}
+      <div
+        ref={containerRef}
+        className="absolute inset-0 flex items-center justify-center overflow-hidden touch-none"
+        style={{ cursor: scale > 1 ? (isDragging ? 'grabbing' : 'grab') : 'zoom-in' }}
+        onPointerDown={handlePointerDown}
+        onPointerMove={handlePointerMove}
+        onPointerUp={handlePointerUp}
+        onClick={handleClick}
+      >
+        <div
+          className="relative w-[85vw] h-[80vh] sm:w-[80vw] sm:h-[85vh]"
+          style={{
+            transform: `scale(${scale}) translate(${position.x / scale}px, ${position.y / scale}px)`,
+            transition: isDragging ? 'none' : 'transform 300ms var(--ease-out)',
+          }}
+        >
+          <Image
+            src={imageUrl || "/placeholder.svg"}
+            alt={alt}
+            fill
+            className="object-contain select-none"
+            style={{ pointerEvents: 'none' }}
+            sizes="90vw"
+            quality={95}
+            priority
+          />
+        </div>
+      </div>
+    </div>
+  )
+}
+
+/* ─── Inquiry Modal ─── */
+
+function InquiryModal({
+  artwork,
+  locale,
+  isOpen,
+  onClose
+}: {
+  artwork: Artwork
+  locale: 'es' | 'en'
+  isOpen: boolean
+  onClose: () => void
+}) {
+  const [formData, setFormData] = useState({
+    name: '',
+    email: '',
+    message: '',
+  })
+  const [isSubmitted, setIsSubmitted] = useState(false)
+
+  const content = {
+    es: {
+      title: 'Consultar sobre esta obra',
+      name: 'Nombre',
+      email: 'Email',
+      message: 'Mensaje',
+      messagePlaceholder: 'Me interesa conocer más sobre esta obra...',
+      submit: 'Enviar consulta',
+      success: 'Gracias. Te contactaremos pronto.',
+      close: 'Cerrar',
+    },
+    en: {
+      title: 'Inquire about this work',
+      name: 'Name',
+      email: 'Email',
+      message: 'Message',
+      messagePlaceholder: 'I am interested in learning more about this work...',
+      submit: 'Send inquiry',
+      success: 'Thank you. We will contact you soon.',
+      close: 'Close',
+    },
+  }
+
+  const t = content[locale]
+
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault()
+    setIsSubmitted(true)
+  }
+
+  if (!isOpen) return null
+
+  return (
+    <div className="fixed inset-0 z-[60] flex items-center justify-center p-4">
+      <div
+        className="absolute inset-0 bg-[hsl(var(--background))]/90"
+        onClick={onClose}
+      />
+      <div className="relative bg-[hsl(var(--card))] border border-[hsl(var(--border))] p-6 sm:p-8 max-w-md w-full">
+        <button
+          onClick={onClose}
+          className="absolute top-4 right-4 text-[hsl(var(--foreground-muted))] hover:text-[hsl(var(--foreground))]"
+          style={{ transition: `color var(--motion-fast) var(--ease-out)` }}
+          aria-label={t.close}
+        >
+          <svg viewBox="0 0 24 24" className="w-5 h-5" fill="none" stroke="currentColor" strokeWidth="1.5">
+            <path d="M6 6L18 18M6 18L18 6" />
+          </svg>
+        </button>
+
+        <div className="mb-6 pb-5 border-b border-[hsl(var(--border))]">
+          <p className="font-body text-sm text-[hsl(var(--foreground-muted))] mb-1">
+            {locale === 'es' ? artwork.title : artwork.titleEn}
+          </p>
+          <p className="font-body text-xs text-[hsl(var(--foreground-subtle))]">
+            {artwork.year} &middot; {artwork.dimensions}
+          </p>
+        </div>
+
+        <h2 className="font-display text-xl text-[hsl(var(--foreground))] mb-6">{t.title}</h2>
+
+        {isSubmitted ? (
+          <div className="py-8 text-center">
+            <p className="font-body text-[hsl(var(--foreground))]">{t.success}</p>
+            <button
+              onClick={onClose}
+              className="mt-4 font-body text-sm text-[hsl(var(--foreground-muted))] hover:text-[hsl(var(--accent))] link-underline"
+            >
+              {t.close}
+            </button>
+          </div>
+        ) : (
+          <form onSubmit={handleSubmit} className="space-y-5">
+            <div>
+              <label className="input-label">{t.name}</label>
+              <input
+                type="text"
+                required
+                value={formData.name}
+                onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                className="input-field"
+              />
+            </div>
+            <div>
+              <label className="input-label">{t.email}</label>
+              <input
+                type="email"
+                required
+                value={formData.email}
+                onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+                className="input-field"
+              />
+            </div>
+            <div>
+              <label className="input-label">{t.message}</label>
+              <textarea
+                rows={3}
+                value={formData.message}
+                onChange={(e) => setFormData({ ...formData, message: e.target.value })}
+                placeholder={t.messagePlaceholder}
+                className="input-field resize-none"
+              />
+            </div>
+            <button
+              type="submit"
+              className="w-full py-3 bg-[hsl(var(--foreground))] text-[hsl(var(--background))] font-body text-sm hover:bg-[hsl(var(--accent))]"
+              style={{ transition: `background-color var(--motion-normal) var(--ease-out)` }}
+            >
+              {t.submit}
+            </button>
+          </form>
+        )}
+      </div>
+    </div>
+  )
+}
+
+/* ─── Related Works ─── */
+
+function RelatedWorks({ currentId, currentSeries, locale }: { currentId: string; currentSeries: string; locale: 'es' | 'en' }) {
+  const allArtworks = useArtworks()
+
+  const related = allArtworks
+    .filter(a => a.id !== currentId)
+    .sort((a, b) => {
+      const aMatch = a.series === currentSeries ? 1 : 0
+      const bMatch = b.series === currentSeries ? 1 : 0
+      return bMatch - aMatch
+    })
+    .slice(0, 3)
+
+  return (
+    <section className="mt-20 sm:mt-28 border-t border-[hsl(var(--border))] pt-10 sm:pt-14">
+      <p className="font-body text-xs tracking-[0.08em] uppercase text-[hsl(var(--foreground-subtle))] mb-8">
+        {locale === 'es' ? 'Otras obras' : 'Other works'}
+      </p>
+      <div className="grid grid-cols-2 sm:grid-cols-3 gap-4 sm:gap-6">
+        {related.map((artwork, index) => (
+          <Link
+            key={artwork.id}
+            href={`/obra/${artwork.id}`}
+            className={`group ${index === 0 ? 'col-span-2 sm:col-span-1' : ''}`}
+          >
+            <div className={`relative overflow-hidden bg-[hsl(var(--muted))] ${
+              index === 0 ? 'aspect-[3/2] sm:aspect-[4/5]' : 'aspect-[4/5]'
+            }`}>
+              <Image
+                src={artwork.imageUrl || "/placeholder.svg"}
+                alt={locale === 'es' ? artwork.title : artwork.titleEn}
+                fill
+                className="object-cover transition-transform group-hover:scale-[1.03]"
+                style={{ transitionDuration: 'var(--motion-slow)' }}
+                sizes="(max-width: 640px) 50vw, 30vw"
+              />
+            </div>
+            <div className="mt-3">
+              <p className="font-display text-sm text-[hsl(var(--foreground))] group-hover:text-[hsl(var(--accent))]"
+                style={{ transition: `color var(--motion-fast) var(--ease-out)` }}
+              >
+                {locale === 'es' ? artwork.title : artwork.titleEn}
+              </p>
+              <p className="font-body text-xs text-[hsl(var(--foreground-subtle))] mt-1">
+                {artwork.year} &middot; {artwork.dimensions}
+              </p>
+            </div>
+          </Link>
+        ))}
+      </div>
+    </section>
+  )
+}
+
+/* ─── Main Detail Page ─── */
+
+function ArtworkDetailContent({ artwork }: { artwork: Artwork }) {
+  const { locale } = useLocale()
+  const [isModalOpen, setIsModalOpen] = useState(false)
+  const [isZoomOpen, setIsZoomOpen] = useState(false)
+  const [isVisible, setIsVisible] = useState(false)
+
+  // Live-refresh artwork status from API
+  const liveArtwork = useArtwork(artwork.id)
+  const currentArtwork = liveArtwork ?? artwork
+
+  useEffect(() => {
+    const timer = setTimeout(() => setIsVisible(true), 50)
+    return () => clearTimeout(timer)
+  }, [])
+
+  const content = {
+    es: {
+      year: 'Año',
+      technique: 'Técnica',
+      dimensions: 'Dimensiones',
+      available: 'Disponible',
+      privateCollection: 'Colección privada',
+      inquire: 'Consultar adquisición',
+      back: 'Catálogo',
+      zoom: 'Ampliar',
+    },
+    en: {
+      year: 'Year',
+      technique: 'Technique',
+      dimensions: 'Dimensions',
+      available: 'Available',
+      privateCollection: 'Private collection',
+      inquire: 'Inquire about acquisition',
+      back: 'Catalogue',
+      zoom: 'Zoom',
+    },
+  }
+
+  const t = content[locale]
+
+  return (
+    <div className="min-h-screen pt-24 sm:pt-28 lg:pt-32">
+      <div className="container-gallery">
+        {/* ── Breadcrumb row ── */}
+        <div
+          className="flex items-center gap-2 mb-8 sm:mb-10"
+          style={{
+            opacity: isVisible ? 1 : 0,
+            transition: 'opacity var(--motion-slow) var(--ease-out)',
+          }}
+        >
+          <Link
+            href="/obra"
+            className="inline-flex items-center gap-1.5 text-[hsl(var(--foreground-muted))] hover:text-[hsl(var(--accent))] group"
+            style={{ transition: 'color var(--motion-fast) var(--ease-out)' }}
+          >
+            <svg viewBox="0 0 24 24" className="w-3.5 h-3.5 transition-transform group-hover:-translate-x-0.5" style={{ transitionDuration: 'var(--motion-normal)' }} fill="none" stroke="currentColor" strokeWidth="1.5">
+              <path d="M19 12H5M5 12L12 19M5 12L12 5" />
+            </svg>
+            <span className="font-body text-xs">{t.back}</span>
+          </Link>
+          <span className="text-[hsl(var(--border-strong))] font-body text-xs">/</span>
+          <span className="font-body text-xs text-[hsl(var(--foreground-subtle))]">
+            {locale === 'es' ? currentArtwork.series : currentArtwork.seriesEn}
+          </span>
+        </div>
+
+        {/* ── Title ── */}
+        <h1
+          className="font-display text-3xl sm:text-4xl md:text-5xl lg:text-[3.5rem] text-[hsl(var(--foreground))] leading-[1.0] mb-10 sm:mb-14 max-w-4xl"
+          style={{
+            opacity: isVisible ? 1 : 0,
+            transform: isVisible ? 'none' : 'translateY(12px)',
+            transition: 'opacity var(--motion-slow) var(--ease-out) 100ms, transform var(--motion-slow) var(--ease-out) 100ms',
+          }}
+        >
+          {locale === 'es' ? currentArtwork.title : currentArtwork.titleEn}
+        </h1>
+
+        {/* ── Artwork image — gallery wall ── */}
+        <div
+          className="mb-14 sm:mb-20"
+          style={{
+            opacity: isVisible ? 1 : 0,
+            transition: 'opacity 0.8s var(--ease-out) 200ms',
+          }}
+        >
+          <button
+            onClick={() => setIsZoomOpen(true)}
+            className="group relative w-full cursor-zoom-in"
+            aria-label={t.zoom}
+          >
+            {/* The painting — with crop marks */}
+            <div className="crop-marks mx-auto" style={{ maxWidth: '920px' }}>
+              <div className="relative aspect-[4/3] sm:aspect-[3/2] bg-[hsl(var(--card))]">
+                <Image
+                  src={currentArtwork.imageUrl || "/placeholder.svg"}
+                  alt={locale === 'es' ? currentArtwork.title : currentArtwork.titleEn}
+                  fill
+                  className="object-contain p-3 sm:p-5"
+                  sizes="(max-width: 1024px) 90vw, 920px"
+                  priority
+                />
+              </div>
+            </div>
+
+            {/* Zoom hint — appears on hover */}
+            <div
+              className="absolute bottom-4 right-4 sm:bottom-6 sm:right-6 flex items-center gap-1.5 py-1.5 px-3 bg-[hsl(var(--foreground))]/80 text-[hsl(var(--background))] opacity-0 group-hover:opacity-100"
+              style={{ transition: 'opacity var(--motion-normal) var(--ease-out)' }}
+            >
+              <svg viewBox="0 0 24 24" className="w-3.5 h-3.5" fill="none" stroke="currentColor" strokeWidth="1.5">
+                <circle cx="11" cy="11" r="7" />
+                <path d="M21 21L16.65 16.65" />
+                <path d="M11 8V14M8 11H14" />
+              </svg>
+              <span className="font-body text-xs">{t.zoom}</span>
+            </div>
+          </button>
+        </div>
+
+        {/* ── Siena accent line ── */}
+        <div className="w-8 h-[2px] bg-[hsl(var(--accent))] mb-10 sm:mb-14" />
+
+        {/* ── Placard: metadata + description ── */}
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-12 lg:gap-16">
+          {/* Left column: technical data + CTA */}
+          <div className="lg:col-span-4">
+            {/* Status */}
+            <p className={`font-annotation text-sm mb-8 ${
+              currentArtwork.status === 'available' ? 'text-[hsl(var(--accent))]' : 'text-[hsl(var(--foreground-subtle))]'
+            }`}>
+              {currentArtwork.status === 'available' ? t.available : t.privateCollection}
+            </p>
+
+            {/* Technical details — stacked labels */}
+            <div className="space-y-5">
+              {[
+                { label: t.year, value: String(currentArtwork.year) },
+                { label: t.technique, value: locale === 'es' ? currentArtwork.technique : currentArtwork.techniqueEn },
+                { label: t.dimensions, value: currentArtwork.dimensions },
+              ].map((item) => (
+                <div key={item.label}>
+                  <p className="font-body text-[0.7rem] tracking-[0.08em] uppercase text-[hsl(var(--foreground-subtle))] mb-1">
+                    {item.label}
+                  </p>
+                  <p className="font-body text-sm text-[hsl(var(--foreground))]">
+                    {item.value}
+                  </p>
+                </div>
+              ))}
+            </div>
+
+            {/* CTA */}
+            {currentArtwork.status === 'available' && (
+              <button
+                onClick={() => setIsModalOpen(true)}
+                className="mt-10 inline-flex items-center gap-3 py-3 px-6 bg-[hsl(var(--foreground))] text-[hsl(var(--background))] font-body text-sm hover:bg-[hsl(var(--accent))]"
+                style={{ transition: 'background-color var(--motion-normal) var(--ease-out)' }}
+              >
+                {t.inquire}
+                <svg viewBox="0 0 24 24" className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth="1.5">
+                  <path d="M5 12H19M19 12L12 5M19 12L12 19" />
+                </svg>
+              </button>
+            )}
+          </div>
+
+          {/* Right column: description with ultramarino accent */}
+          <div className="lg:col-span-7 lg:col-start-6">
+            <div className="flex gap-5 sm:gap-6">
+              {/* Vertical accent bar */}
+              <div className="w-[3px] bg-[hsl(var(--ultra))] shrink-0 hidden sm:block" />
+              <div>
+                <p className="font-body text-base sm:text-lg text-[hsl(var(--foreground-muted))] leading-[1.7]">
+                  {locale === 'es' ? currentArtwork.description : currentArtwork.descriptionEn}
+                </p>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Related works */}
+        <RelatedWorks currentId={currentArtwork.id} currentSeries={currentArtwork.series} locale={locale} />
+
+        <div className="pb-16 sm:pb-24" />
+      </div>
+
+      {/* Modals */}
+      <ZoomViewer
+        imageUrl={currentArtwork.imageUrl}
+        alt={locale === 'es' ? currentArtwork.title : currentArtwork.titleEn}
+        isOpen={isZoomOpen}
+        onClose={() => setIsZoomOpen(false)}
+        locale={locale}
+      />
+
+      <InquiryModal
+        artwork={currentArtwork}
+        locale={locale}
+        isOpen={isModalOpen}
+        onClose={() => setIsModalOpen(false)}
+      />
+    </div>
+  )
+}
+
+export default function ArtworkDetailPage({ params }: { params: Promise<{ id: string }> }) {
+  const { id } = use(params)
+  const artwork = artworks.find(a => a.id === id)
+
+  if (!artwork) {
+    notFound()
+  }
+
+  return (
+    <MainLayout>
+      <ArtworkDetailContent artwork={artwork} />
+    </MainLayout>
+  )
+}

@@ -1,0 +1,284 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    /* Surfaces */
+    --background: 40 14% 96%;
+    --background-alt: 36 10% 91%;
+    --background-dark: 225 20% 7%;
+    --foreground-light: 40 10% 92%;
+    --foreground-light-muted: 36 5% 52%;
+
+    /* Ink — 3 levels only */
+    --foreground: 220 14% 11%;
+    --foreground-muted: 218 8% 34%;
+    --foreground-subtle: 216 6% 42%;
+
+    /* Siena tostada */
+    --accent: 14 68% 40%;
+    --accent-light: 16 55% 52%;
+    --accent-dark: 12 72% 30%;
+
+    /* Ultramarino */
+    --ultra: 228 64% 28%;
+    --ultra-light: 228 48% 40%;
+
+    /* UI */
+    --border: 36 8% 84%;
+    --border-strong: 218 8% 64%;
+    --card: 38 12% 93%;
+    --muted: 36 10% 91%;
+
+    /* shadcn compat */
+    --primary: 14 68% 40%;
+    --primary-foreground: 40 14% 96%;
+    --secondary: 218 8% 34%;
+    --secondary-foreground: 220 14% 11%;
+    --destructive: 0 72% 51%;
+    --destructive-foreground: 40 14% 96%;
+    --ring: 14 68% 40%;
+    --radius: 0;
+    --card-foreground: 220 14% 11%;
+    --popover: 38 12% 93%;
+    --popover-foreground: 220 14% 11%;
+    --muted-foreground: 218 8% 34%;
+    --accent-foreground: 40 14% 96%;
+    --input: 36 8% 84%;
+
+    /* Motion — 3 speeds */
+    --motion-fast: 120ms;
+    --motion-normal: 280ms;
+    --motion-slow: 500ms;
+    --ease-out: cubic-bezier(0.22, 1, 0.36, 1);
+    --ease-smooth: cubic-bezier(0.77, 0, 0.175, 1);
+  }
+}
+
+@layer base {
+  * {
+    border-color: hsl(var(--border));
+  }
+
+  html {
+    scroll-behavior: smooth;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+
+  body {
+    background: hsl(var(--background));
+    color: hsl(var(--foreground));
+    font-family: var(--font-body);
+    font-feature-settings: "kern" 1, "liga" 1;
+  }
+
+  /* Paper grain — subtle texture */
+  body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    z-index: 50;
+    pointer-events: none;
+    opacity: 0.028;
+    background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+    background-repeat: repeat;
+    background-size: 200px;
+    mix-blend-mode: multiply;
+  }
+
+  ::selection {
+    background: hsl(var(--accent) / 0.18);
+    color: hsl(var(--foreground));
+  }
+}
+
+/* Typography */
+
+.font-display {
+  font-family: var(--font-display);
+  font-weight: 400;
+  letter-spacing: -0.01em;
+  line-height: 1;
+}
+
+.font-body {
+  font-family: var(--font-body);
+  font-weight: 400;
+  letter-spacing: 0;
+  line-height: 1.6;
+}
+
+.font-annotation {
+  font-family: var(--font-body);
+  font-style: italic;
+  font-weight: 400;
+  letter-spacing: 0.01em;
+}
+
+/* Animations — 2 only */
+
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes driftUp {
+  from { opacity: 0; transform: translateY(20px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.animate-fade-in {
+  animation: fadeIn var(--motion-slow) var(--ease-out) forwards;
+  opacity: 0;
+}
+
+.animate-drift-up {
+  animation: driftUp var(--motion-slow) var(--ease-out) forwards;
+  opacity: 0;
+}
+
+/* Links */
+
+.link-underline {
+  position: relative;
+  display: inline-block;
+}
+
+.link-underline::after {
+  content: '';
+  position: absolute;
+  bottom: -2px;
+  left: 0;
+  width: 100%;
+  height: 1px;
+  background: currentColor;
+  transform: scaleX(0);
+  transform-origin: right;
+  transition: transform var(--motion-normal) var(--ease-smooth);
+}
+
+.link-underline:hover::after {
+  transform: scaleX(1);
+  transform-origin: left;
+}
+
+.link-underline-siena::after {
+  background: hsl(var(--accent));
+  height: 2px;
+}
+
+/* Forms */
+
+.input-field {
+  width: 100%;
+  padding: 0.75rem 0;
+  background: transparent;
+  border: none;
+  border-bottom: 1px solid hsl(var(--border));
+  color: hsl(var(--foreground));
+  font-family: var(--font-body);
+  font-size: 0.875rem;
+  transition: border-color var(--motion-normal) var(--ease-out);
+}
+
+.input-field:focus {
+  outline: none;
+  border-bottom-color: hsl(var(--accent));
+}
+
+.input-field::placeholder {
+  color: hsl(var(--foreground-subtle));
+  font-family: var(--font-body);
+  font-style: italic;
+}
+
+.input-label {
+  display: block;
+  font-family: var(--font-body);
+  font-size: 0.7rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: hsl(var(--foreground-muted));
+  margin-bottom: 0.25rem;
+}
+
+/* Layout */
+
+.container-gallery {
+  max-width: 1400px;
+  margin: 0 auto;
+  padding-left: 1.25rem;
+  padding-right: 1.25rem;
+}
+
+@media (min-width: 640px) {
+  .container-gallery {
+    padding-left: 2rem;
+    padding-right: 2rem;
+  }
+}
+
+@media (min-width: 1024px) {
+  .container-gallery {
+    padding-left: 3rem;
+    padding-right: 3rem;
+  }
+}
+
+/* Crop marks */
+
+.crop-marks {
+  position: relative;
+}
+
+.crop-marks::before,
+.crop-marks::after {
+  content: '';
+  position: absolute;
+  width: 16px;
+  height: 16px;
+  pointer-events: none;
+  opacity: 0.35;
+}
+
+.crop-marks::before {
+  top: -6px;
+  left: -6px;
+  border-top: 0.5px solid hsl(var(--foreground-muted));
+  border-left: 0.5px solid hsl(var(--foreground-muted));
+}
+
+.crop-marks::after {
+  bottom: -6px;
+  right: -6px;
+  border-bottom: 0.5px solid hsl(var(--foreground-muted));
+  border-right: 0.5px solid hsl(var(--foreground-muted));
+}
+
+/* Dark sections */
+
+.section-dark {
+  background: hsl(var(--background-dark));
+  color: hsl(var(--foreground-light));
+}
+
+/* Scrollbar */
+
+::-webkit-scrollbar { width: 3px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: hsl(var(--accent) / 0.25); }
+::-webkit-scrollbar-thumb:hover { background: hsl(var(--accent) / 0.5); }
+
+/* Reduced motion */
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+  html { scroll-behavior: auto; }
+  body::before { display: none; }
+}

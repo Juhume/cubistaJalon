@@ -1,0 +1,162 @@
+[
+  {
+    "id": "fragmentos-del-tiempo",
+    "title": "Fragmentos del Tiempo",
+    "titleEn": "Fragments of Time",
+    "year": 2024,
+    "technique": "Óleo sobre lienzo",
+    "techniqueEn": "Oil on canvas",
+    "dimensions": "150 x 120 cm",
+    "series": "Deconstrucciones",
+    "seriesEn": "Deconstructions",
+    "status": "available",
+    "featured": true,
+    "description": "Una exploración de la percepción temporal a través de planos geométricos superpuestos que desafían la linealidad del tiempo.",
+    "descriptionEn": "An exploration of temporal perception through superimposed geometric planes that challenge the linearity of time.",
+    "imageUrl": "https://images.unsplash.com/photo-1541961017774-22349e4a1262?w=800&q=80",
+    "gridSpan": {
+      "cols": 6,
+      "rows": 2
+    }
+  },
+  {
+    "id": "naturaleza-fracturada",
+    "title": "Naturaleza Fracturada",
+    "titleEn": "Fractured Nature",
+    "year": 2024,
+    "technique": "Acrílico y técnica mixta",
+    "techniqueEn": "Acrylic and mixed media",
+    "dimensions": "100 x 80 cm",
+    "series": "Paisajes Imposibles",
+    "seriesEn": "Impossible Landscapes",
+    "status": "available",
+    "featured": true,
+    "description": "La naturaleza vista desde múltiples ángulos simultáneos, revelando la complejidad oculta en lo cotidiano.",
+    "descriptionEn": "Nature seen from multiple simultaneous angles, revealing the hidden complexity in the everyday.",
+    "imageUrl": "https://images.unsplash.com/photo-1549490349-8643362247b5?w=800&q=80",
+    "gridSpan": {
+      "cols": 4,
+      "rows": 1
+    }
+  },
+  {
+    "id": "retrato-multiplicado",
+    "title": "Retrato Multiplicado",
+    "titleEn": "Multiplied Portrait",
+    "year": 2023,
+    "technique": "Óleo sobre lienzo",
+    "techniqueEn": "Oil on canvas",
+    "dimensions": "120 x 100 cm",
+    "series": "Identidades",
+    "seriesEn": "Identities",
+    "status": "sold",
+    "featured": true,
+    "description": "Una investigación sobre la multiplicidad del ser, donde el rostro se descompone en facetas que revelan las distintas máscaras de la identidad.",
+    "descriptionEn": "An investigation into the multiplicity of being, where the face decomposes into facets revealing the different masks of identity.",
+    "imageUrl": "https://images.unsplash.com/photo-1482160549825-59d1b23cb208?w=800&q=80",
+    "gridSpan": {
+      "cols": 4,
+      "rows": 2
+    }
+  },
+  {
+    "id": "ciudad-angular",
+    "title": "Ciudad Angular",
+    "titleEn": "Angular City",
+    "year": 2023,
+    "technique": "Acrílico sobre madera",
+    "techniqueEn": "Acrylic on wood",
+    "dimensions": "180 x 140 cm",
+    "series": "Urbanismos",
+    "seriesEn": "Urbanisms",
+    "status": "available",
+    "featured": true,
+    "description": "La urbe contemporánea fragmentada en planos geométricos que capturan la energía caótica de la vida urbana.",
+    "descriptionEn": "The contemporary city fragmented into geometric planes capturing the chaotic energy of urban life.",
+    "imageUrl": "https://images.unsplash.com/photo-1605721911519-3dfeb3be25e7?w=800&q=80",
+    "gridSpan": {
+      "cols": 8,
+      "rows": 2
+    }
+  },
+  {
+    "id": "melodia-visual",
+    "title": "Melodía Visual",
+    "titleEn": "Visual Melody",
+    "year": 2023,
+    "technique": "Óleo y collage",
+    "techniqueEn": "Oil and collage",
+    "dimensions": "90 x 70 cm",
+    "series": "Sinestesias",
+    "seriesEn": "Synesthesias",
+    "status": "available",
+    "featured": false,
+    "description": "La música traducida en formas geométricas y color, una sinfonía visual que invita a escuchar con los ojos.",
+    "descriptionEn": "Music translated into geometric forms and color, a visual symphony that invites you to listen with your eyes.",
+    "imageUrl": "https://images.unsplash.com/photo-1573096108468-702f6014ef28?w=800&q=80",
+    "gridSpan": {
+      "cols": 4,
+      "rows": 1
+    }
+  },
+  {
+    "id": "equilibrio-inestable",
+    "title": "Equilibrio Inestable",
+    "titleEn": "Unstable Equilibrium",
+    "year": 2022,
+    "technique": "Técnica mixta sobre lienzo",
+    "techniqueEn": "Mixed media on canvas",
+    "dimensions": "160 x 130 cm",
+    "series": "Tensiones",
+    "seriesEn": "Tensions",
+    "status": "sold",
+    "featured": false,
+    "description": "Formas que desafían la gravedad y la lógica, suspendidas en un momento de tensión perpetua.",
+    "descriptionEn": "Forms that defy gravity and logic, suspended in a moment of perpetual tension.",
+    "imageUrl": "https://images.unsplash.com/photo-1557672172-298e090bd0f1?w=800&q=80",
+    "gridSpan": {
+      "cols": 6,
+      "rows": 2
+    }
+  },
+  {
+    "id": "memoria-geometrica",
+    "title": "Memoria Geométrica",
+    "titleEn": "Geometric Memory",
+    "year": 2022,
+    "technique": "Óleo sobre lienzo",
+    "techniqueEn": "Oil on canvas",
+    "dimensions": "100 x 100 cm",
+    "series": "Deconstrucciones",
+    "seriesEn": "Deconstructions",
+    "status": "available",
+    "featured": false,
+    "description": "Los recuerdos como fragmentos de un espejo roto, cada pieza reflejando una versión diferente del pasado.",
+    "descriptionEn": "Memories as fragments of a broken mirror, each piece reflecting a different version of the past.",
+    "imageUrl": "https://images.unsplash.com/photo-1515405295579-ba7b45403062?w=800&q=80",
+    "gridSpan": {
+      "cols": 4,
+      "rows": 1
+    }
+  },
+  {
+    "id": "danza-de-planos",
+    "title": "Danza de Planos",
+    "titleEn": "Dance of Planes",
+    "year": 2024,
+    "technique": "Acrílico sobre lienzo",
+    "techniqueEn": "Acrylic on canvas",
+    "dimensions": "140 x 110 cm",
+    "series": "Movimiento",
+    "seriesEn": "Movement",
+    "status": "available",
+    "featured": true,
+    "description": "El movimiento capturado en múltiples instantes simultáneos, una coreografía de formas y colores.",
+    "descriptionEn": "Movement captured in multiple simultaneous instants, a choreography of forms and colors.",
+    "imageUrl": "https://images.unsplash.com/photo-1536924940846-227afb31e2a5?w=800&q=80",
+    "gridSpan": {
+      "cols": 5,
+      "rows": 2
+    }
+  }
+]
