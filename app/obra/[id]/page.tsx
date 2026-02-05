@@ -9,9 +9,9 @@ import { MainLayout, useLocale } from '@/components/layout/main-layout'
 import { artworks, type Artwork } from '@/lib/artworks'
 import { useArtwork, useArtworks } from '@/lib/use-artworks'
 
-/* ─── Zoom Viewer ─── */
+/* ─── Zoom Viewer (Desktop) ─── */
 
-function ZoomViewer({
+function DesktopZoomViewer({
   imageUrl,
   alt,
   isOpen,
@@ -33,7 +33,6 @@ function ZoomViewer({
   const posStart = useRef({ x: 0, y: 0 })
   const [visible, setVisible] = useState(false)
 
-  // Lock body scroll when open
   useEffect(() => {
     if (isOpen) {
       const scrollY = window.scrollY
@@ -78,7 +77,6 @@ function ZoomViewer({
     return () => el.removeEventListener('wheel', onWheel)
   }, [isOpen])
 
-  // Pointer drag
   const handlePointerDown = useCallback((e: React.PointerEvent) => {
     if (scale <= 1) return
     setIsDragging(true)
@@ -92,36 +90,21 @@ function ZoomViewer({
     if (!isDragging) return
     const dx = e.clientX - dragStart.current.x
     const dy = e.clientY - dragStart.current.y
-    if (Math.abs(dx) > 3 || Math.abs(dy) > 3) {
-      wasDragging.current = true
-    }
-    setPosition({
-      x: posStart.current.x + dx,
-      y: posStart.current.y + dy,
-    })
+    if (Math.abs(dx) > 3 || Math.abs(dy) > 3) wasDragging.current = true
+    setPosition({ x: posStart.current.x + dx, y: posStart.current.y + dy })
   }, [isDragging])
 
-  const handlePointerUp = useCallback(() => {
-    setIsDragging(false)
-  }, [])
+  const handlePointerUp = useCallback(() => { setIsDragging(false) }, [])
 
-  // Click to toggle zoom — ignore if user was dragging
   const handleClick = useCallback(() => {
     if (wasDragging.current) return
-    if (scale > 1) {
-      setScale(1)
-      setPosition({ x: 0, y: 0 })
-    } else {
-      setScale(2.5)
-    }
+    if (scale > 1) { setScale(1); setPosition({ x: 0, y: 0 }) }
+    else setScale(2.5)
   }, [scale])
 
-  // Escape key
   useEffect(() => {
     if (!isOpen) return
-    const handleKey = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') onClose()
-    }
+    const handleKey = (e: KeyboardEvent) => { if (e.key === 'Escape') onClose() }
     window.addEventListener('keydown', handleKey)
     return () => window.removeEventListener('keydown', handleKey)
   }, [isOpen, onClose])
@@ -131,80 +114,312 @@ function ZoomViewer({
   return (
     <div
       className="fixed inset-0 z-[70]"
-      style={{
-        opacity: visible ? 1 : 0,
-        transition: 'opacity 300ms var(--ease-out)',
-      }}
+      style={{ opacity: visible ? 1 : 0, transition: 'opacity 300ms var(--ease-out)' }}
     >
-      {/* Backdrop */}
       <div className="absolute inset-0 bg-black/95" />
 
-      {/* Controls */}
-      <div className="absolute top-0 left-0 right-0 z-10 flex items-center justify-between py-5 px-5 sm:px-8">
+      <div className="absolute top-0 left-0 right-0 z-10 flex items-center justify-between py-5 px-8">
         <p className="font-body text-xs text-white/50">
           {scale > 1
             ? (locale === 'es' ? 'Arrastra para explorar' : 'Drag to explore')
-            : (locale === 'es' ? 'Click para ampliar' : 'Click to zoom in')
-          }
+            : (locale === 'es' ? 'Click para ampliar' : 'Click to zoom in')}
         </p>
-        <button
-          onClick={onClose}
-          className="text-white/50 hover:text-white p-2"
+        <button onClick={onClose} className="text-white/50 hover:text-white p-2"
           style={{ transition: 'color var(--motion-fast) var(--ease-out)' }}
-          aria-label={locale === 'es' ? 'Cerrar' : 'Close'}
-        >
+          aria-label={locale === 'es' ? 'Cerrar' : 'Close'}>
           <svg viewBox="0 0 24 24" className="w-5 h-5" fill="none" stroke="currentColor" strokeWidth="1.5">
             <path d="M6 6L18 18M6 18L18 6" />
           </svg>
         </button>
       </div>
 
-      {/* Zoom level indicator */}
       <div className="absolute bottom-6 left-1/2 -translate-x-1/2 z-10 flex items-center gap-3">
-        <button
-          onClick={() => { setScale(1); setPosition({ x: 0, y: 0 }) }}
-          className={`font-body text-xs py-1 px-2 ${scale <= 1 ? 'text-white' : 'text-white/40'}`}
-        >
-          1x
-        </button>
+        <button onClick={() => { setScale(1); setPosition({ x: 0, y: 0 }) }}
+          className={`font-body text-xs py-1 px-2 ${scale <= 1 ? 'text-white' : 'text-white/40'}`}>1x</button>
         <div className="w-20 h-px bg-white/20 relative">
-          <div
-            className="absolute top-1/2 -translate-y-1/2 w-2 h-2 bg-[hsl(var(--accent))]"
-            style={{ left: `${((scale - 1) / 4) * 100}%`, transition: isDragging ? 'none' : 'left 150ms var(--ease-out)' }}
-          />
+          <div className="absolute top-1/2 -translate-y-1/2 w-2 h-2 bg-[hsl(var(--accent))]"
+            style={{ left: `${((scale - 1) / 4) * 100}%`, transition: isDragging ? 'none' : 'left 150ms var(--ease-out)' }} />
         </div>
-        <button
-          onClick={() => setScale(5)}
-          className={`font-body text-xs py-1 px-2 ${scale >= 5 ? 'text-white' : 'text-white/40'}`}
-        >
-          5x
-        </button>
+        <button onClick={() => setScale(5)}
+          className={`font-body text-xs py-1 px-2 ${scale >= 5 ? 'text-white' : 'text-white/40'}`}>5x</button>
       </div>
 
-      {/* Image canvas */}
-      <div
-        ref={containerRef}
+      <div ref={containerRef}
         className="absolute inset-0 flex items-center justify-center overflow-hidden touch-none"
         style={{ cursor: scale > 1 ? (isDragging ? 'grabbing' : 'grab') : 'zoom-in' }}
-        onPointerDown={handlePointerDown}
-        onPointerMove={handlePointerMove}
-        onPointerUp={handlePointerUp}
-        onClick={handleClick}
-      >
-        <div
-          className="relative w-[85vw] h-[80vh] sm:w-[80vw] sm:h-[85vh]"
+        onPointerDown={handlePointerDown} onPointerMove={handlePointerMove}
+        onPointerUp={handlePointerUp} onClick={handleClick}>
+        <div className="relative w-[80vw] h-[85vh]"
           style={{
             transform: `scale(${scale}) translate(${position.x / scale}px, ${position.y / scale}px)`,
             transition: isDragging ? 'none' : 'transform 300ms var(--ease-out)',
-          }}
+          }}>
+          <Image src={imageUrl || "/placeholder.svg"} alt={alt} fill
+            className="object-contain select-none" style={{ pointerEvents: 'none' }}
+            sizes="90vw" quality={95} priority />
+        </div>
+      </div>
+    </div>
+  )
+}
+
+/* ─── Zoom Viewer (Mobile) — pinch-to-zoom with native touch ─── */
+
+function MobileZoomViewer({
+  imageUrl,
+  alt,
+  isOpen,
+  onClose,
+  locale,
+}: {
+  imageUrl: string
+  alt: string
+  isOpen: boolean
+  onClose: () => void
+  locale: 'es' | 'en'
+}) {
+  const containerRef = useRef<HTMLDivElement>(null)
+  const imgRef = useRef<HTMLDivElement>(null)
+  const [visible, setVisible] = useState(false)
+  const [hint, setHint] = useState(true)
+
+  // Touch state refs (not React state — too slow for 60fps touch)
+  const scaleRef = useRef(1)
+  const posRef = useRef({ x: 0, y: 0 })
+  const pinchStartDist = useRef(0)
+  const pinchStartScale = useRef(1)
+  const panStart = useRef({ x: 0, y: 0 })
+  const posStart = useRef({ x: 0, y: 0 })
+  const touchMode = useRef<'none' | 'pan' | 'pinch'>('none')
+  const lastTap = useRef(0)
+
+  const applyTransform = useCallback(() => {
+    if (!imgRef.current) return
+    const s = scaleRef.current
+    const p = posRef.current
+    imgRef.current.style.transform = `scale(${s}) translate(${p.x / s}px, ${p.y / s}px)`
+  }, [])
+
+  // Clamp position so image doesn't fly off screen
+  const clampPosition = useCallback(() => {
+    const s = scaleRef.current
+    if (s <= 1) {
+      posRef.current = { x: 0, y: 0 }
+      return
+    }
+    const maxX = (window.innerWidth * (s - 1)) / 2
+    const maxY = (window.innerHeight * (s - 1)) / 2
+    posRef.current.x = Math.max(-maxX, Math.min(maxX, posRef.current.x))
+    posRef.current.y = Math.max(-maxY, Math.min(maxY, posRef.current.y))
+  }, [])
+
+  useEffect(() => {
+    if (isOpen) {
+      const scrollY = window.scrollY
+      document.body.style.position = 'fixed'
+      document.body.style.top = `-${scrollY}px`
+      document.body.style.left = '0'
+      document.body.style.right = '0'
+      document.body.style.overflow = 'hidden'
+      scaleRef.current = 1
+      posRef.current = { x: 0, y: 0 }
+      setHint(true)
+      requestAnimationFrame(() => setVisible(true))
+
+      // Auto-hide hint
+      const hintTimer = setTimeout(() => setHint(false), 2500)
+
+      return () => {
+        clearTimeout(hintTimer)
+        document.body.style.position = ''
+        document.body.style.top = ''
+        document.body.style.left = ''
+        document.body.style.right = ''
+        document.body.style.overflow = ''
+        window.scrollTo(0, scrollY)
+      }
+    } else {
+      setVisible(false)
+    }
+  }, [isOpen])
+
+  // Native touch handlers for 60fps performance
+  useEffect(() => {
+    if (!isOpen) return
+    const el = containerRef.current
+    if (!el) return
+
+    const dist = (t1: Touch, t2: Touch) =>
+      Math.hypot(t2.clientX - t1.clientX, t2.clientY - t1.clientY)
+
+    const onTouchStart = (e: TouchEvent) => {
+      e.preventDefault()
+      setHint(false)
+
+      if (e.touches.length === 2) {
+        // Pinch start
+        touchMode.current = 'pinch'
+        pinchStartDist.current = dist(e.touches[0], e.touches[1])
+        pinchStartScale.current = scaleRef.current
+        // Also track midpoint for combined pan
+        panStart.current = {
+          x: (e.touches[0].clientX + e.touches[1].clientX) / 2,
+          y: (e.touches[0].clientY + e.touches[1].clientY) / 2,
+        }
+        posStart.current = { ...posRef.current }
+      } else if (e.touches.length === 1) {
+        // Double-tap detection
+        const now = Date.now()
+        if (now - lastTap.current < 300) {
+          // Double tap — toggle zoom
+          if (scaleRef.current > 1.1) {
+            scaleRef.current = 1
+            posRef.current = { x: 0, y: 0 }
+          } else {
+            scaleRef.current = 2.5
+            // Center zoom on tap position
+            const cx = e.touches[0].clientX - window.innerWidth / 2
+            const cy = e.touches[0].clientY - window.innerHeight / 2
+            posRef.current = { x: -cx * 0.6, y: -cy * 0.6 }
+            clampPosition()
+          }
+          applyTransform()
+          if (imgRef.current) imgRef.current.style.transition = 'transform 300ms var(--ease-out)'
+          setTimeout(() => {
+            if (imgRef.current) imgRef.current.style.transition = 'none'
+          }, 300)
+          lastTap.current = 0
+          return
+        }
+        lastTap.current = now
+
+        // Single finger pan (only when zoomed)
+        touchMode.current = 'pan'
+        panStart.current = { x: e.touches[0].clientX, y: e.touches[0].clientY }
+        posStart.current = { ...posRef.current }
+      }
+    }
+
+    const onTouchMove = (e: TouchEvent) => {
+      e.preventDefault()
+
+      if (touchMode.current === 'pinch' && e.touches.length === 2) {
+        const d = dist(e.touches[0], e.touches[1])
+        const newScale = Math.max(1, Math.min(5, pinchStartScale.current * (d / pinchStartDist.current)))
+        scaleRef.current = newScale
+
+        // Pan with pinch midpoint
+        const midX = (e.touches[0].clientX + e.touches[1].clientX) / 2
+        const midY = (e.touches[0].clientY + e.touches[1].clientY) / 2
+        posRef.current = {
+          x: posStart.current.x + (midX - panStart.current.x),
+          y: posStart.current.y + (midY - panStart.current.y),
+        }
+        clampPosition()
+        applyTransform()
+      } else if (touchMode.current === 'pan' && e.touches.length === 1 && scaleRef.current > 1) {
+        const dx = e.touches[0].clientX - panStart.current.x
+        const dy = e.touches[0].clientY - panStart.current.y
+        posRef.current = {
+          x: posStart.current.x + dx,
+          y: posStart.current.y + dy,
+        }
+        clampPosition()
+        applyTransform()
+      }
+    }
+
+    const onTouchEnd = (e: TouchEvent) => {
+      if (e.touches.length === 0) {
+        // Snap back to 1x if barely zoomed
+        if (scaleRef.current < 1.1) {
+          scaleRef.current = 1
+          posRef.current = { x: 0, y: 0 }
+          if (imgRef.current) imgRef.current.style.transition = 'transform 300ms var(--ease-out)'
+          applyTransform()
+          setTimeout(() => {
+            if (imgRef.current) imgRef.current.style.transition = 'none'
+          }, 300)
+        }
+        touchMode.current = 'none'
+      } else if (e.touches.length === 1) {
+        // Went from pinch to single finger — start pan from here
+        touchMode.current = 'pan'
+        panStart.current = { x: e.touches[0].clientX, y: e.touches[0].clientY }
+        posStart.current = { ...posRef.current }
+      }
+    }
+
+    el.addEventListener('touchstart', onTouchStart, { passive: false })
+    el.addEventListener('touchmove', onTouchMove, { passive: false })
+    el.addEventListener('touchend', onTouchEnd, { passive: false })
+
+    return () => {
+      el.removeEventListener('touchstart', onTouchStart)
+      el.removeEventListener('touchmove', onTouchMove)
+      el.removeEventListener('touchend', onTouchEnd)
+    }
+  }, [isOpen, applyTransform, clampPosition])
+
+  if (!isOpen) return null
+
+  return (
+    <div
+      className="fixed inset-0 z-[70]"
+      style={{ opacity: visible ? 1 : 0, transition: 'opacity 300ms var(--ease-out)' }}
+    >
+      <div className="absolute inset-0 bg-black" />
+
+      {/* Close button — large touch target */}
+      <button
+        onClick={onClose}
+        className="absolute top-4 right-4 z-20 w-11 h-11 flex items-center justify-center"
+        aria-label={locale === 'es' ? 'Cerrar' : 'Close'}
+      >
+        <div className="w-8 h-8 rounded-full bg-white/10 flex items-center justify-center">
+          <svg viewBox="0 0 24 24" className="w-4 h-4 text-white" fill="none" stroke="currentColor" strokeWidth="2">
+            <path d="M6 6L18 18M6 18L18 6" />
+          </svg>
+        </div>
+      </button>
+
+      {/* Pinch hint — fades out after 2.5s */}
+      <div
+        className="absolute inset-x-0 bottom-8 z-20 flex justify-center pointer-events-none"
+        style={{
+          opacity: hint ? 1 : 0,
+          transition: 'opacity 500ms var(--ease-out)',
+        }}
+      >
+        <div className="flex items-center gap-2 py-2 px-4 bg-white/10 backdrop-blur-sm rounded-full">
+          {/* Pinch icon */}
+          <svg viewBox="0 0 24 24" className="w-4 h-4 text-white/70" fill="none" stroke="currentColor" strokeWidth="1.5">
+            <path d="M9 12L4 7M4 7L4 11M4 7L8 7" />
+            <path d="M15 12L20 17M20 17L20 13M20 17L16 17" />
+          </svg>
+          <span className="font-body text-xs text-white/70">
+            {locale === 'es' ? 'Pellizca para ampliar' : 'Pinch to zoom'}
+          </span>
+        </div>
+      </div>
+
+      {/* Image canvas — full screen, native touch gestures */}
+      <div
+        ref={containerRef}
+        className="absolute inset-0 flex items-center justify-center overflow-hidden"
+      >
+        <div
+          ref={imgRef}
+          className="relative w-full h-full"
+          style={{ transformOrigin: 'center center' }}
         >
           <Image
             src={imageUrl || "/placeholder.svg"}
             alt={alt}
             fill
             className="object-contain select-none"
-            style={{ pointerEvents: 'none' }}
-            sizes="90vw"
+            style={{ pointerEvents: 'none', padding: '12px' }}
+            sizes="100vw"
             quality={95}
             priority
           />
@@ -212,6 +427,30 @@ function ZoomViewer({
       </div>
     </div>
   )
+}
+
+/* ─── Zoom Viewer — routes to Desktop or Mobile ─── */
+
+function ZoomViewer(props: {
+  imageUrl: string
+  alt: string
+  isOpen: boolean
+  onClose: () => void
+  locale: 'es' | 'en'
+}) {
+  const [isMobile, setIsMobile] = useState(false)
+
+  useEffect(() => {
+    // Detect touch device — check for coarse pointer (phones/tablets)
+    const mq = window.matchMedia('(pointer: coarse)')
+    setIsMobile(mq.matches)
+    const handler = (e: MediaQueryListEvent) => setIsMobile(e.matches)
+    mq.addEventListener('change', handler)
+    return () => mq.removeEventListener('change', handler)
+  }, [])
+
+  if (isMobile) return <MobileZoomViewer {...props} />
+  return <DesktopZoomViewer {...props} />
 }
 
 /* ─── Inquiry Modal ─── */
@@ -514,9 +753,9 @@ function ArtworkDetailContent({ artwork }: { artwork: Artwork }) {
               </div>
             </div>
 
-            {/* Zoom hint — appears on hover */}
+            {/* Zoom hint — hover on desktop, always visible on mobile */}
             <div
-              className="absolute bottom-4 right-4 sm:bottom-6 sm:right-6 flex items-center gap-1.5 py-1.5 px-3 bg-[hsl(var(--foreground))]/80 text-[hsl(var(--background))] opacity-0 group-hover:opacity-100"
+              className="absolute bottom-4 right-4 sm:bottom-6 sm:right-6 flex items-center gap-1.5 py-1.5 px-3 bg-[hsl(var(--foreground))]/80 text-[hsl(var(--background))] sm:opacity-0 sm:group-hover:opacity-100"
               style={{ transition: 'opacity var(--motion-normal) var(--ease-out)' }}
             >
               <svg viewBox="0 0 24 24" className="w-3.5 h-3.5" fill="none" stroke="currentColor" strokeWidth="1.5">

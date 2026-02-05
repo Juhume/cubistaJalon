@@ -1,6 +1,6 @@
 'use client'
 
-import React, { useState, createContext, useContext, useEffect } from 'react'
+import React, { useState, createContext, useContext, useEffect, useRef } from 'react'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 
@@ -198,15 +198,19 @@ function Header({ locale, onLocaleChange }: { locale: Locale; onLocaleChange: (l
       <div
         className="fixed inset-0 z-40 lg:hidden"
         style={{
+          pointerEvents: isMobileMenuOpen ? 'auto' : 'none',
           visibility: isMobileMenuOpen ? 'visible' : 'hidden',
-          transition: `visibility 0ms ${isMobileMenuOpen ? '0ms' : '400ms'}`,
+          transition: `visibility 0ms ${isMobileMenuOpen ? '0ms' : '350ms'}`,
         }}
       >
+        {/* Background — opens fast, closes slow (after text is gone) */}
         <div
           className="absolute inset-0 bg-[hsl(var(--background))]"
           style={{
             opacity: isMobileMenuOpen ? 1 : 0,
-            transition: `opacity var(--motion-normal) var(--ease-out)`,
+            transition: isMobileMenuOpen
+              ? `opacity 200ms var(--ease-out)`
+              : `opacity 300ms var(--ease-out) 50ms`,
           }}
         />
 
@@ -216,8 +220,10 @@ function Header({ locale, onLocaleChange }: { locale: Locale; onLocaleChange: (l
           style={{
             opacity: isMobileMenuOpen ? 1 : 0,
             transform: isMobileMenuOpen ? 'scaleY(1)' : 'scaleY(0)',
-            transformOrigin: 'top',
-            transition: `all var(--motion-slow) var(--ease-out) 100ms`,
+            transformOrigin: isMobileMenuOpen ? 'top' : 'bottom',
+            transition: isMobileMenuOpen
+              ? `all var(--motion-slow) var(--ease-out) 100ms`
+              : `all 200ms var(--ease-out)`,
           }}
         />
 
@@ -234,8 +240,10 @@ function Header({ locale, onLocaleChange }: { locale: Locale; onLocaleChange: (l
                 style={{
                   paddingLeft: `${index * 0.75}rem`,
                   opacity: isMobileMenuOpen ? 1 : 0,
-                  transform: isMobileMenuOpen ? 'none' : `translateX(-12px)`,
-                  transition: `opacity var(--motion-normal) var(--ease-out) ${150 + index * 60}ms, transform var(--motion-normal) var(--ease-out) ${150 + index * 60}ms`,
+                  transform: isMobileMenuOpen ? 'none' : `translateY(8px)`,
+                  transition: isMobileMenuOpen
+                    ? `opacity var(--motion-normal) var(--ease-out) ${200 + index * 50}ms, transform var(--motion-normal) var(--ease-out) ${200 + index * 50}ms`
+                    : `opacity 120ms var(--ease-out), transform 120ms var(--ease-out)`,
                 }}
               >
                 <span
@@ -256,7 +264,9 @@ function Header({ locale, onLocaleChange }: { locale: Locale; onLocaleChange: (l
             style={{
               paddingLeft: `${navItems.length * 0.75}rem`,
               opacity: isMobileMenuOpen ? 1 : 0,
-              transition: `opacity var(--motion-normal) var(--ease-out) ${150 + navItems.length * 60}ms`,
+              transition: isMobileMenuOpen
+                ? `opacity var(--motion-normal) var(--ease-out) ${200 + navItems.length * 50}ms`
+                : `opacity 100ms var(--ease-out)`,
             }}
           >
             <button
@@ -337,6 +347,60 @@ function Footer({ locale }: { locale: Locale }) {
   )
 }
 
+/* ─── Page Transition ─── */
+
+function PageTransition({ children }: { children: React.ReactNode }) {
+  const pathname = usePathname()
+  const prevPathname = useRef(pathname)
+  const [isVisible, setIsVisible] = useState(true)
+  const [displayChildren, setDisplayChildren] = useState(children)
+  const isTransitioning = useRef(false)
+
+  useEffect(() => {
+    // Skip if same path or already transitioning
+    if (pathname === prevPathname.current || isTransitioning.current) {
+      // Still update children for same-path renders
+      setDisplayChildren(children)
+      return
+    }
+
+    isTransitioning.current = true
+
+    // Phase 1: fade out current content (fast)
+    setIsVisible(false)
+
+    const timer = setTimeout(() => {
+      // Phase 2: swap content + scroll to top
+      setDisplayChildren(children)
+      window.scrollTo(0, 0)
+
+      // Phase 3: fade in new content (after a frame for paint)
+      requestAnimationFrame(() => {
+        setIsVisible(true)
+        prevPathname.current = pathname
+        isTransitioning.current = false
+      })
+    }, 150) // Keep this fast — just enough to feel intentional
+
+    return () => clearTimeout(timer)
+  }, [pathname, children])
+
+  return (
+    <div
+      style={{
+        opacity: isVisible ? 1 : 0,
+        transition: isVisible
+          ? 'opacity 300ms var(--ease-out)'
+          : 'opacity 150ms var(--ease-out)',
+      }}
+    >
+      {displayChildren}
+    </div>
+  )
+}
+
+/* ─── Main Layout ─── */
+
 interface MainLayoutProps {
   children: React.ReactNode
 }
@@ -348,7 +412,9 @@ export function MainLayout({ children }: MainLayoutProps) {
     <LocaleContext.Provider value={{ locale, setLocale }}>
       <div className="min-h-screen bg-[hsl(var(--background))]">
         <Header locale={locale} onLocaleChange={setLocale} />
-        <main>{children}</main>
+        <main>
+          <PageTransition>{children}</PageTransition>
+        </main>
         <Footer locale={locale} />
       </div>
     </LocaleContext.Provider>
