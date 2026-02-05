@@ -111,7 +111,7 @@ function AcquisitionContent() {
       <div className="container-gallery">
         {/* Header */}
         <div
-          className="max-w-3xl mb-16 sm:mb-20"
+          className="max-w-3xl mb-10 sm:mb-16 lg:mb-20"
           style={{
             opacity: isVisible ? 1 : 0,
             transform: isVisible ? 'translateY(0)' : 'translateY(16px)',
@@ -127,11 +127,11 @@ function AcquisitionContent() {
         </div>
 
         {/* Process — staggered cards with siena left border */}
-        <section className="mb-16 sm:mb-20 max-w-2xl">
+        <section className="mb-10 sm:mb-16 lg:mb-20 max-w-2xl">
           {t.process.map((step, index) => (
             <div
               key={step.num}
-              className="flex gap-0 py-4"
+              className="flex gap-0 py-3 sm:py-4"
               style={{
                 paddingLeft: `${index * 1}rem`,
               }}

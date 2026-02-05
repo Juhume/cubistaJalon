@@ -886,6 +886,9 @@ function ArtworkDetailContent({ artwork }: { artwork: Artwork }) {
             )}
           </div>
 
+          {/* Siena separator — mobile only (grid collapses to 1 col) */}
+          <div className="w-8 h-[2px] bg-[hsl(var(--accent))] lg:hidden" />
+
           {/* Right column: description with ultramarino accent */}
           <div className="lg:col-span-7 lg:col-start-6">
             <div className="flex gap-5 sm:gap-6">

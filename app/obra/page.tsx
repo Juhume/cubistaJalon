@@ -25,7 +25,7 @@ function WorkRow({
   return (
     <Link
       href={`/obra/${artwork.id}`}
-      className="group flex items-baseline gap-3 sm:gap-6 py-3 sm:py-4 border-b border-[hsl(var(--border))] hover:bg-[hsl(var(--muted))]"
+      className="group flex flex-wrap items-baseline gap-3 sm:gap-6 py-3 sm:py-4 border-b border-[hsl(var(--border))] hover:bg-[hsl(var(--muted))]"
       style={{
         opacity: isVisible ? 1 : 0,
         transform: isVisible ? 'translateY(0)' : 'translateY(8px)',
@@ -41,6 +41,25 @@ function WorkRow({
         style={{ transition: `color var(--motion-fast) var(--ease-out)` }}
       >
         {locale === 'es' ? artwork.title : artwork.titleEn}
+      </span>
+      <span className="w-full pl-[44px] sm:hidden flex items-center gap-1.5 mt-0.5">
+        <span className="font-body text-xs text-[hsl(var(--foreground-muted))]">
+          {artwork.year}
+        </span>
+        <span className="text-[hsl(var(--foreground-subtle))] text-xs">&middot;</span>
+        <span className={`font-annotation text-xs ${
+          artwork.status === 'available'
+            ? 'text-[hsl(var(--accent))]'
+            : artwork.status === 'reserved'
+              ? 'text-[hsl(var(--ultra))]'
+              : 'text-[hsl(var(--foreground-subtle))]'
+        }`}>
+          {artwork.status === 'available'
+            ? (locale === 'es' ? 'Disponible' : 'Available')
+            : artwork.status === 'reserved'
+              ? (locale === 'es' ? 'Reservada' : 'Reserved')
+              : (locale === 'es' ? 'Col. privada' : 'Private col.')}
+        </span>
       </span>
       <span className="font-body text-xs text-[hsl(var(--foreground-muted))] hidden sm:block shrink-0">
         {artwork.year}
@@ -148,33 +167,37 @@ function GalleryContent() {
 
         {/* Filters */}
         <div
-          className="mb-8 sm:mb-10 flex items-center gap-3 flex-wrap"
+          className="relative mb-8 sm:mb-10"
           style={{
             opacity: isVisible ? 1 : 0,
             transition: `opacity var(--motion-slow) var(--ease-out) 100ms`,
           }}
         >
-          <span className="font-body text-xs tracking-[0.08em] uppercase text-[hsl(var(--foreground-subtle))] mr-2">
-            {t.filterLabel}
-          </span>
-          {series.map((s) => (
-            <button
-              key={s.id}
-              onClick={() => setSelectedSeries(s.id)}
-              className="font-body text-sm py-2 px-3"
-              style={{
-                color: selectedSeries === s.id
-                  ? 'hsl(var(--foreground))'
-                  : 'hsl(var(--foreground-muted))',
-                borderBottom: selectedSeries === s.id
-                  ? '1px solid hsl(var(--foreground))'
-                  : '1px solid transparent',
-                transition: `color var(--motion-fast) var(--ease-out), border-color var(--motion-fast) var(--ease-out)`,
-              }}
-            >
-              {locale === 'es' ? s.name : s.nameEn}
-            </button>
-          ))}
+          <div className="flex items-center gap-3 flex-nowrap sm:flex-wrap overflow-x-auto sm:overflow-visible no-scrollbar">
+            <span className="shrink-0 whitespace-nowrap font-body text-xs tracking-[0.08em] uppercase text-[hsl(var(--foreground-subtle))] mr-2">
+              {t.filterLabel}
+            </span>
+            {series.map((s) => (
+              <button
+                key={s.id}
+                onClick={() => setSelectedSeries(s.id)}
+                className="shrink-0 whitespace-nowrap font-body text-sm py-2 px-3"
+                style={{
+                  color: selectedSeries === s.id
+                    ? 'hsl(var(--foreground))'
+                    : 'hsl(var(--foreground-muted))',
+                  borderBottom: selectedSeries === s.id
+                    ? '1px solid hsl(var(--foreground))'
+                    : '1px solid transparent',
+                  transition: `color var(--motion-fast) var(--ease-out), border-color var(--motion-fast) var(--ease-out)`,
+                }}
+              >
+                {locale === 'es' ? s.name : s.nameEn}
+              </button>
+            ))}
+          </div>
+          {/* Fade hint — indicates scrollability on mobile */}
+          <div className="absolute right-0 top-0 bottom-0 w-8 bg-gradient-to-l from-[hsl(var(--background))] to-transparent pointer-events-none sm:hidden" />
         </div>
 
         {/* Content grid */}

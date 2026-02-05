@@ -209,86 +209,87 @@ function Header({ locale, onLocaleChange }: { locale: Locale; onLocaleChange: (l
         style={{
           pointerEvents: isMobileMenuOpen ? 'auto' : 'none',
           visibility: isMobileMenuOpen ? 'visible' : 'hidden',
-          transition: `visibility 0ms ${isMobileMenuOpen ? '0ms' : '350ms'}`,
+          transition: `visibility 0ms ${isMobileMenuOpen ? '0ms' : '400ms'}`,
         }}
       >
-        {/* Background — opens fast, closes slow (after text is gone) */}
+        {/* Background — warm, calm fill */}
         <div
           className="absolute inset-0 bg-[hsl(var(--background))]"
           style={{
             opacity: isMobileMenuOpen ? 1 : 0,
-            transition: isMobileMenuOpen
-              ? `opacity 200ms var(--ease-out)`
-              : `opacity 300ms var(--ease-out) 50ms`,
+            transition: `opacity ${isMobileMenuOpen ? '250ms' : '300ms'} var(--ease-out)${isMobileMenuOpen ? '' : ' 80ms'}`,
           }}
         />
 
-        {/* Siena accent strip */}
+        {/* Siena accent — thin vertical breath */}
         <div
-          className="absolute left-0 top-0 bottom-0 w-1 bg-[hsl(var(--accent))]"
+          className="absolute left-0 top-0 bottom-0 w-[3px] bg-[hsl(var(--accent))]"
+          style={{
+            opacity: isMobileMenuOpen ? 0.8 : 0,
+            transform: isMobileMenuOpen ? 'scaleY(1)' : 'scaleY(0)',
+            transformOrigin: 'top',
+            transition: isMobileMenuOpen
+              ? `opacity 400ms var(--ease-out) 120ms, transform 500ms var(--ease-out) 120ms`
+              : `opacity 200ms var(--ease-out), transform 200ms var(--ease-out)`,
+          }}
+        />
+
+        {/* Nav content — everything moves as ONE unit */}
+        <nav
+          className="relative h-full flex flex-col items-start justify-center px-8 sm:px-12"
           style={{
             opacity: isMobileMenuOpen ? 1 : 0,
-            transform: isMobileMenuOpen ? 'scaleY(1)' : 'scaleY(0)',
-            transformOrigin: isMobileMenuOpen ? 'top' : 'bottom',
+            transform: isMobileMenuOpen ? 'translateY(0)' : 'translateY(12px)',
             transition: isMobileMenuOpen
-              ? `all var(--motion-slow) var(--ease-out) 100ms`
-              : `all 200ms var(--ease-out)`,
+              ? `opacity 350ms var(--ease-out) 150ms, transform 400ms var(--ease-out) 150ms`
+              : `opacity 180ms var(--ease-out), transform 180ms var(--ease-out)`,
           }}
-        />
+        >
+          <div className="flex flex-col gap-6">
+            {navItems.map((item) => {
+              const isActive = pathname === item.href ||
+                (item.href !== '/' && pathname.startsWith(item.href))
 
-        <nav className="relative h-full flex flex-col items-start justify-center gap-5 px-8">
-          {navItems.map((item, index) => {
-            const isActive = pathname === item.href ||
-              (item.href !== '/' && pathname.startsWith(item.href))
-
-            return (
-              <Link
-                key={item.href}
-                href={item.href}
-                className="group block"
-                style={{
-                  paddingLeft: `${index * 0.75}rem`,
-                  opacity: isMobileMenuOpen ? 1 : 0,
-                  transform: isMobileMenuOpen ? 'translateY(0)' : `translateY(8px)`,
-                  willChange: 'opacity, transform',
-                  transition: isMobileMenuOpen
-                    ? `opacity var(--motion-normal) var(--ease-out) ${200 + index * 50}ms, transform var(--motion-normal) var(--ease-out) ${200 + index * 50}ms`
-                    : `opacity 120ms var(--ease-out), transform 120ms var(--ease-out)`,
-                }}
-              >
-                <span
-                  className="font-display text-2xl sm:text-3xl"
-                  style={{
-                    color: isActive ? 'hsl(var(--accent))' : 'hsl(var(--foreground))',
-                  }}
+              return (
+                <Link
+                  key={item.href}
+                  href={item.href}
+                  className="group block"
                 >
-                  {item.label[locale]}
-                </span>
-              </Link>
-            )
-          })}
+                  <span
+                    className="font-display text-[1.65rem] sm:text-3xl"
+                    style={{
+                      color: isActive ? 'hsl(var(--accent))' : 'hsl(var(--foreground))',
+                      transition: 'color var(--motion-fast) var(--ease-out)',
+                    }}
+                  >
+                    {item.label[locale]}
+                  </span>
+                </Link>
+              )
+            })}
+          </div>
 
-          {/* Mobile language toggle */}
-          <div
-            className="flex items-center gap-3 mt-4 pt-6 border-t border-[hsl(var(--border))]"
-            style={{
-              paddingLeft: `${navItems.length * 0.75}rem`,
-              opacity: isMobileMenuOpen ? 1 : 0,
-              transition: isMobileMenuOpen
-                ? `opacity var(--motion-normal) var(--ease-out) ${200 + navItems.length * 50}ms`
-                : `opacity 100ms var(--ease-out)`,
-            }}
-          >
+          {/* Language toggle — part of the same unit, no separate animation */}
+          <div className="flex items-center gap-3 mt-8 pt-6 border-t border-[hsl(var(--border))]">
             <button
               onClick={() => onLocaleChange('es')}
-              className={`font-body text-base ${locale === 'es' ? 'text-[hsl(var(--foreground))]' : 'text-[hsl(var(--foreground-muted))]'}`}
+              className="font-body text-base py-1 px-1"
+              style={{
+                color: locale === 'es' ? 'hsl(var(--foreground))' : 'hsl(var(--foreground-muted))',
+                transition: 'color var(--motion-fast) var(--ease-out)',
+              }}
             >
               Español
             </button>
             <span className="text-[hsl(var(--border-strong))]">/</span>
             <button
               onClick={() => onLocaleChange('en')}
-              className={`font-body text-base ${locale === 'en' ? 'text-[hsl(var(--foreground))]' : 'text-[hsl(var(--foreground-muted))]'}`}
+              className="font-body text-base py-1 px-1"
+              style={{
+                color: locale === 'en' ? 'hsl(var(--foreground))' : 'hsl(var(--foreground-muted))',
+                transition: 'color var(--motion-fast) var(--ease-out)',
+              }}
             >
               English
             </button>
