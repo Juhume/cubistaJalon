@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect, useRef } from 'react'
+import { useState, useEffect, useRef, useMemo } from 'react'
 import Link from 'next/link'
 import Image from 'next/image'
 import { MainLayout, useLocale } from '@/components/layout/main-layout'
@@ -28,8 +28,8 @@ function WorkRow({
       className="group flex items-baseline gap-3 sm:gap-6 py-3 sm:py-4 border-b border-[hsl(var(--border))] hover:bg-[hsl(var(--muted))]"
       style={{
         opacity: isVisible ? 1 : 0,
-        transform: isVisible ? 'none' : 'translateY(8px)',
-        transition: `opacity var(--motion-slow) var(--ease-out) ${index * 40}ms, transform var(--motion-slow) var(--ease-out) ${index * 40}ms, background-color var(--motion-fast) var(--ease-out)`,
+        transform: isVisible ? 'translateY(0)' : 'translateY(8px)',
+        transition: `opacity var(--motion-normal) var(--ease-out) ${Math.min(index * 35, 350)}ms, transform var(--motion-normal) var(--ease-out) ${Math.min(index * 35, 350)}ms, background-color var(--motion-fast) var(--ease-out)`,
       }}
       onMouseEnter={() => onHover(artwork)}
       onMouseLeave={() => onHover(null)}
@@ -52,12 +52,16 @@ function WorkRow({
         font-annotation text-xs shrink-0 hidden sm:block w-24 text-right
         ${artwork.status === 'available'
           ? 'text-[hsl(var(--accent))]'
-          : 'text-[hsl(var(--foreground-subtle))]'
+          : artwork.status === 'reserved'
+            ? 'text-[hsl(var(--ultra))]'
+            : 'text-[hsl(var(--foreground-subtle))]'
         }
       `}>
         {artwork.status === 'available'
           ? (locale === 'es' ? 'Disponible' : 'Available')
-          : (locale === 'es' ? 'Col. privada' : 'Private col.')
+          : artwork.status === 'reserved'
+            ? (locale === 'es' ? 'Reservada' : 'Reserved')
+            : (locale === 'es' ? 'Col. privada' : 'Private col.')
         }
       </span>
     </Link>
@@ -74,7 +78,7 @@ function GalleryContent() {
   const sectionRef = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
-    const timer = setTimeout(() => setIsVisible(true), 100)
+    const timer = setTimeout(() => setIsVisible(true), 50)
     return () => clearTimeout(timer)
   }, [])
 
@@ -103,22 +107,26 @@ function GalleryContent() {
 
   const t = content[locale]
 
-  const groupedArtworks: { series: string; seriesEn: string; works: Artwork[] }[] = []
-  const seriesMap = new Map<string, Artwork[]>()
+  const groupedArtworks = useMemo(() => {
+    const groups: { series: string; seriesEn: string; works: Artwork[] }[] = []
+    const seriesMap = new Map<string, Artwork[]>()
 
-  filteredArtworks.forEach(a => {
-    const key = a.series
-    if (!seriesMap.has(key)) seriesMap.set(key, [])
-    seriesMap.get(key)!.push(a)
-  })
-
-  seriesMap.forEach((works, seriesName) => {
-    groupedArtworks.push({
-      series: seriesName,
-      seriesEn: works[0].seriesEn,
-      works,
+    filteredArtworks.forEach(a => {
+      const key = a.series
+      if (!seriesMap.has(key)) seriesMap.set(key, [])
+      seriesMap.get(key)!.push(a)
     })
-  })
+
+    seriesMap.forEach((works, seriesName) => {
+      groups.push({
+        series: seriesName,
+        seriesEn: works[0].seriesEn,
+        works,
+      })
+    })
+
+    return groups
+  }, [filteredArtworks])
 
   let globalIndex = 0
 
@@ -153,7 +161,7 @@ function GalleryContent() {
             <button
               key={s.id}
               onClick={() => setSelectedSeries(s.id)}
-              className="font-body text-sm py-1 px-2"
+              className="font-body text-sm py-2 px-3"
               style={{
                 color: selectedSeries === s.id
                   ? 'hsl(var(--foreground))'

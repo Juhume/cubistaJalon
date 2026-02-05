@@ -57,8 +57,8 @@ function ExhibitionsContent() {
           className="font-display text-3xl sm:text-4xl md:text-5xl text-[hsl(var(--foreground))] leading-[1.1] mb-12 sm:mb-16"
           style={{
             opacity: isVisible ? 1 : 0,
-            transform: isVisible ? 'none' : 'translateY(16px)',
-            transition: `opacity var(--motion-slow) var(--ease-out), transform var(--motion-slow) var(--ease-out)`,
+            transform: isVisible ? 'translateY(0)' : 'translateY(16px)',
+            transition: 'opacity 0.6s var(--ease-out), transform 0.7s var(--ease-out)',
           }}
         >
           {t.title}

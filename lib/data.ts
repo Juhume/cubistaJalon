@@ -4,17 +4,40 @@ import { type Artwork, artworks as seedArtworks } from './artworks'
 
 const DATA_PATH = join(process.cwd(), 'data', 'artworks.json')
 
+// In-memory cache — avoids readFileSync on every request
+let cachedData: Artwork[] | null = null
+let cacheTime = 0
+const CACHE_TTL = 5000 // 5 seconds
+
 function readData(): Artwork[] {
-  if (!existsSync(DATA_PATH)) {
-    // Fall back to seed data if JSON file doesn't exist
-    return seedArtworks
+  // Return cache if fresh
+  if (cachedData && Date.now() - cacheTime < CACHE_TTL) {
+    return cachedData
   }
-  const raw = readFileSync(DATA_PATH, 'utf-8')
-  return JSON.parse(raw) as Artwork[]
+
+  if (!existsSync(DATA_PATH)) {
+    cachedData = seedArtworks
+    cacheTime = Date.now()
+    return cachedData
+  }
+  try {
+    const raw = readFileSync(DATA_PATH, 'utf-8')
+    cachedData = JSON.parse(raw) as Artwork[]
+  } catch {
+    cachedData = seedArtworks
+  }
+  cacheTime = Date.now()
+  return cachedData
+}
+
+function invalidateCache() {
+  cachedData = null
+  cacheTime = 0
 }
 
 function writeData(artworks: Artwork[]): void {
   writeFileSync(DATA_PATH, JSON.stringify(artworks, null, 2), 'utf-8')
+  invalidateCache()
 }
 
 export function getAllArtworks(): Artwork[] {
@@ -25,7 +48,7 @@ export function getArtworkById(id: string): Artwork | undefined {
   return readData().find(a => a.id === id)
 }
 
-export function getArtworksByStatus(status: 'available' | 'sold'): Artwork[] {
+export function getArtworksByStatus(status: 'available' | 'sold' | 'reserved'): Artwork[] {
   return readData().filter(a => a.status === status)
 }
 

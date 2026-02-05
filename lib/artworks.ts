@@ -8,7 +8,7 @@ export interface Artwork {
   dimensions: string
   series: string
   seriesEn: string
-  status: 'available' | 'sold'
+  status: 'available' | 'sold' | 'reserved'
   featured: boolean
   description: string
   descriptionEn: string

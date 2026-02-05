@@ -15,7 +15,7 @@ type NewArtworkForm = {
   dimensions: string
   series: string
   seriesEn: string
-  status: 'available' | 'sold'
+  status: 'available' | 'sold' | 'reserved'
   description: string
   descriptionEn: string
   imageUrl: string
@@ -95,12 +95,12 @@ function StatusBadge({ status, onClick, updating }: { status: string; onClick: (
         ${updating ? 'opacity-50' : ''}
       `}
       style={{ transition: 'all var(--motion-normal) var(--ease-out)' }}
-      title={status === 'available' ? 'Marcar como vendida' : 'Marcar como disponible'}
+      title={status === 'available' ? 'Reservar' : status === 'reserved' ? 'Marcar como vendida' : 'Marcar como disponible'}
     >
       {updating ? (
         <span className="inline-block w-3 h-3 border border-current border-t-transparent rounded-full animate-spin" />
       ) : (
-        status === 'available' ? 'Disponible' : 'Vendida'
+        status === 'available' ? 'Disponible' : status === 'reserved' ? 'Reservada' : 'Vendida'
       )}
     </button>
   )
@@ -110,6 +110,9 @@ function artwork_status_classes(status: string): string {
   if (status === 'available') {
     return 'text-[hsl(var(--accent))] border border-[hsl(var(--accent))] hover:bg-[hsl(var(--accent))] hover:text-[hsl(var(--background))]'
   }
+  if (status === 'reserved') {
+    return 'text-[hsl(var(--ultra))] border border-[hsl(var(--ultra))] hover:bg-[hsl(var(--ultra))] hover:text-[hsl(var(--background))]'
+  }
   return 'text-[hsl(var(--foreground-subtle))] border border-[hsl(var(--border-strong))] hover:bg-[hsl(var(--foreground-subtle))] hover:text-[hsl(var(--background))]'
 }
 
@@ -118,7 +121,6 @@ export default function AdminPage() {
   const [isAuthenticated, setIsAuthenticated] = useState(false)
   const [loginError, setLoginError] = useState(false)
   const [artworks, setArtworks] = useState<Artwork[]>([])
-  const [loading, setLoading] = useState(false)
   const [updatingId, setUpdatingId] = useState<string | null>(null)
   const [message, setMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null)
   const [showAddForm, setShowAddForm] = useState(false)
@@ -128,20 +130,6 @@ export default function AdminPage() {
     'Authorization': `Bearer ${token}`,
     'Content-Type': 'application/json',
   }), [token])
-
-  const fetchArtworks = useCallback(async () => {
-    setLoading(true)
-    try {
-      const res = await fetch('/api/artworks')
-      if (!res.ok) throw new Error('Failed to fetch')
-      const data = await res.json()
-      setArtworks(data)
-    } catch {
-      setMessage({ type: 'error', text: 'Error cargando obras' })
-    } finally {
-      setLoading(false)
-    }
-  }, [])
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -178,7 +166,12 @@ export default function AdminPage() {
   }
 
   const toggleStatus = async (artwork: Artwork) => {
-    const newStatus = artwork.status === 'available' ? 'sold' : 'available'
+    const cycle: Record<string, 'available' | 'sold' | 'reserved'> = {
+      available: 'reserved',
+      reserved: 'sold',
+      sold: 'available',
+    }
+    const newStatus = cycle[artwork.status] || 'available'
     setUpdatingId(artwork.id)
     try {
       const res = await fetch(`/api/artworks/${artwork.id}`, {
@@ -194,11 +187,13 @@ export default function AdminPage() {
         }
         throw new Error('Update failed')
       }
+      const updated = await res.json() as Artwork
+      setArtworks(prev => prev.map(a => a.id === artwork.id ? updated : a))
+      const statusLabels: Record<string, string> = { available: 'Disponible', reserved: 'Reservada', sold: 'Vendida' }
       setMessage({
         type: 'success',
-        text: `${artwork.title} — ${newStatus === 'available' ? 'Disponible' : 'Vendida'}`,
+        text: `${artwork.title} — ${statusLabels[newStatus]}`,
       })
-      await fetchArtworks()
     } catch {
       setMessage({ type: 'error', text: 'Error actualizando estado' })
     } finally {
@@ -221,8 +216,8 @@ export default function AdminPage() {
         }
         throw new Error('Delete failed')
       }
+      setArtworks(prev => prev.filter(a => a.id !== artwork.id))
       setMessage({ type: 'success', text: `Eliminada: ${artwork.title}` })
-      await fetchArtworks()
     } catch {
       setMessage({ type: 'error', text: 'Error eliminando obra' })
     }
@@ -251,10 +246,11 @@ export default function AdminPage() {
         const err = await res.json()
         throw new Error(err.error || 'Error al crear')
       }
+      const created = await res.json() as Artwork
+      setArtworks(prev => [...prev, created])
       setMessage({ type: 'success', text: `Añadida: ${newArtwork.title}` })
       setNewArtwork(emptyForm)
       setShowAddForm(false)
-      await fetchArtworks()
     } catch (err) {
       const msg = err instanceof Error ? err.message : 'Error añadiendo obra'
       setMessage({ type: 'error', text: msg })
@@ -273,6 +269,7 @@ export default function AdminPage() {
   }
 
   const availableCount = artworks.filter(a => a.status === 'available').length
+  const reservedCount = artworks.filter(a => a.status === 'reserved').length
   const soldCount = artworks.filter(a => a.status === 'sold').length
 
   // Login screen
@@ -346,6 +343,7 @@ export default function AdminPage() {
             <div className="hidden sm:flex items-center gap-3 font-body text-xs text-[hsl(var(--foreground-muted))]">
               <span>{artworks.length} obras</span>
               <span className="text-[hsl(var(--accent))]">{availableCount} disponibles</span>
+              {reservedCount > 0 && <span className="text-[hsl(var(--ultra))]">{reservedCount} reservadas</span>}
               <span className="text-[hsl(var(--foreground-subtle))]">{soldCount} vendidas</span>
             </div>
           </div>
@@ -501,11 +499,12 @@ export default function AdminPage() {
                     <label className="input-label">Estado</label>
                     <select
                       value={newArtwork.status}
-                      onChange={(e) => setNewArtwork({ ...newArtwork, status: e.target.value as 'available' | 'sold' })}
+                      onChange={(e) => setNewArtwork({ ...newArtwork, status: e.target.value as 'available' | 'sold' | 'reserved' })}
                       className="input-field"
                       style={{ cursor: 'pointer' }}
                     >
                       <option value="available">Disponible</option>
+                      <option value="reserved">Reservada</option>
                       <option value="sold">Vendida</option>
                     </select>
                   </div>
@@ -569,12 +568,7 @@ export default function AdminPage() {
         )}
 
         {/* Artworks table */}
-        {loading ? (
-          <div className="py-20 text-center">
-            <span className="inline-block w-5 h-5 border-2 border-[hsl(var(--accent))] border-t-transparent rounded-full animate-spin" />
-          </div>
-        ) : (
-          <div className="overflow-x-auto">
+        <div className="overflow-x-auto">
             <table className="w-full">
               <thead>
                 <tr className="border-b-2 border-[hsl(var(--foreground))]">
@@ -643,7 +637,6 @@ export default function AdminPage() {
               </tbody>
             </table>
           </div>
-        )}
 
         {/* Footer info */}
         <div className="mt-8 pt-6 border-t border-[hsl(var(--border))] flex items-center justify-between">

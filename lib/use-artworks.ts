@@ -1,37 +1,65 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useSyncExternalStore, useCallback } from 'react'
 import { artworks as staticArtworks, type Artwork } from './artworks'
 
 /**
- * Hook: optimistic-static with live refresh.
+ * Shared fetch cache — prevents duplicate API calls when multiple
+ * components call useArtworks() simultaneously.
+ */
+let sharedArtworks: Artwork[] = staticArtworks
+let fetchPromise: Promise<void> | null = null
+let listeners: Set<() => void> = new Set()
+
+function notifyListeners() {
+  listeners.forEach(l => l())
+}
+
+function fetchArtworksOnce() {
+  if (fetchPromise) return fetchPromise
+
+  fetchPromise = fetch('/api/artworks')
+    .then(res => {
+      if (!res.ok) throw new Error('API error')
+      return res.json()
+    })
+    .then((data: Artwork[]) => {
+      sharedArtworks = data
+      notifyListeners()
+    })
+    .catch(() => {
+      // Keep static data — silent fallback
+    })
+    .finally(() => {
+      fetchPromise = null
+    })
+
+  return fetchPromise
+}
+
+/**
+ * Hook: optimistic-static with shared live refresh.
+ * All components share a single fetch — no duplicate API calls.
  * Renders instantly from static data, then refreshes from API in background.
- * If API fails, keeps static data (graceful fallback).
  */
 export function useArtworks() {
-  const [artworks, setArtworks] = useState<Artwork[]>(staticArtworks)
+  const subscribe = useCallback((callback: () => void) => {
+    listeners.add(callback)
+    return () => { listeners.delete(callback) }
+  }, [])
+
+  const getSnapshot = useCallback(() => sharedArtworks, [])
+
+  const artworks = useSyncExternalStore(subscribe, getSnapshot, getSnapshot)
 
   useEffect(() => {
-    let cancelled = false
-
-    fetch('/api/artworks')
-      .then(res => {
-        if (!res.ok) throw new Error('API error')
-        return res.json()
-      })
-      .then((data: Artwork[]) => {
-        if (!cancelled) setArtworks(data)
-      })
-      .catch(() => {
-        // Keep static data — silent fallback
-      })
-
-    return () => { cancelled = true }
+    fetchArtworksOnce()
   }, [])
 
   return artworks
 }
 
 /**
- * Single artwork hook. Same pattern: static first, then live.
+ * Single artwork hook. Uses shared cache when available,
+ * falls back to individual fetch.
  */
 export function useArtwork(id: string) {
   const staticArtwork = staticArtworks.find(a => a.id === id) ?? null

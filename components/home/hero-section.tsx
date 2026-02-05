@@ -78,8 +78,8 @@ export function HeroSection({ locale }: HeroSectionProps) {
             className="block font-display text-[clamp(3.5rem,12vw,11rem)] leading-[0.85] tracking-[-0.02em] text-[hsl(var(--foreground-light))]"
             style={{
               opacity: phase >= 1 ? 1 : 0,
-              transform: phase >= 1 ? 'none' : 'translateY(40px)',
-              transition: 'opacity 0.8s var(--ease-out), transform 1s var(--ease-out)',
+              transform: phase >= 1 ? 'none' : 'translateY(24px)',
+              transition: 'opacity 0.8s var(--ease-out), transform 0.8s var(--ease-out)',
             }}
           >
             Cubista
@@ -88,8 +88,8 @@ export function HeroSection({ locale }: HeroSectionProps) {
             className="block font-display text-[clamp(3.5rem,12vw,11rem)] leading-[0.85] tracking-[-0.02em] text-[hsl(var(--foreground-light))]"
             style={{
               opacity: phase >= 1 ? 1 : 0,
-              transform: phase >= 1 ? 'none' : 'translateY(40px)',
-              transition: 'opacity 0.8s var(--ease-out) 100ms, transform 1s var(--ease-out) 100ms',
+              transform: phase >= 1 ? 'none' : 'translateY(24px)',
+              transition: 'opacity 0.8s var(--ease-out) 80ms, transform 0.8s var(--ease-out) 80ms',
             }}
           >
             Jalón

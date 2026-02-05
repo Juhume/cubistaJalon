@@ -15,6 +15,7 @@ function AcquisitionContent() {
     message: '',
   })
   const [isSubmitted, setIsSubmitted] = useState(false)
+  const [errors, setErrors] = useState<Record<string, string>>({})
   const [isVisible, setIsVisible] = useState(false)
 
   useEffect(() => {
@@ -84,9 +85,25 @@ function AcquisitionContent() {
 
   const t = content[locale]
 
+  const validate = (): boolean => {
+    const newErrors: Record<string, string> = {}
+    if (!formData.name.trim()) {
+      newErrors.name = locale === 'es' ? 'Nombre requerido' : 'Name required'
+    }
+    if (!formData.email.trim()) {
+      newErrors.email = locale === 'es' ? 'Email requerido' : 'Email required'
+    } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email)) {
+      newErrors.email = locale === 'es' ? 'Email no válido' : 'Invalid email'
+    }
+    setErrors(newErrors)
+    return Object.keys(newErrors).length === 0
+  }
+
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault()
-    setIsSubmitted(true)
+    if (validate()) {
+      setIsSubmitted(true)
+    }
   }
 
   return (
@@ -97,8 +114,8 @@ function AcquisitionContent() {
           className="max-w-3xl mb-16 sm:mb-20"
           style={{
             opacity: isVisible ? 1 : 0,
-            transform: isVisible ? 'none' : 'translateY(16px)',
-            transition: `opacity var(--motion-slow) var(--ease-out), transform var(--motion-slow) var(--ease-out)`,
+            transform: isVisible ? 'translateY(0)' : 'translateY(16px)',
+            transition: 'opacity 0.6s var(--ease-out), transform 0.7s var(--ease-out)',
           }}
         >
           <h1 className="font-display text-3xl sm:text-4xl md:text-5xl text-[hsl(var(--foreground))] leading-[1.1] mb-6">
@@ -153,34 +170,42 @@ function AcquisitionContent() {
                 <p className="font-body text-[hsl(var(--foreground))]">{t.success}</p>
               </div>
             ) : (
-              <form onSubmit={handleSubmit} className="space-y-6">
+              <form onSubmit={handleSubmit} className="space-y-6" noValidate>
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
                   <div>
-                    <label className="input-label">{t.name} *</label>
+                    <label htmlFor="field-name" className="input-label">{t.name} *</label>
                     <input
+                      id="field-name"
                       type="text"
                       required
+                      autoComplete="name"
                       value={formData.name}
-                      onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                      className="input-field"
+                      onChange={(e) => { setFormData({ ...formData, name: e.target.value }); setErrors(prev => ({ ...prev, name: '' })) }}
+                      className={`input-field ${errors.name ? 'border-[hsl(var(--accent))]' : ''}`}
                     />
+                    {errors.name && <p className="font-body text-xs text-[hsl(var(--accent))] mt-1">{errors.name}</p>}
                   </div>
                   <div>
-                    <label className="input-label">{t.email} *</label>
+                    <label htmlFor="field-email" className="input-label">{t.email} *</label>
                     <input
+                      id="field-email"
                       type="email"
                       required
+                      autoComplete="email"
                       value={formData.email}
-                      onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-                      className="input-field"
+                      onChange={(e) => { setFormData({ ...formData, email: e.target.value }); setErrors(prev => ({ ...prev, email: '' })) }}
+                      className={`input-field ${errors.email ? 'border-[hsl(var(--accent))]' : ''}`}
                     />
+                    {errors.email && <p className="font-body text-xs text-[hsl(var(--accent))] mt-1">{errors.email}</p>}
                   </div>
                 </div>
 
                 <div>
-                  <label className="input-label">{t.phone}</label>
+                  <label htmlFor="field-phone" className="input-label">{t.phone}</label>
                   <input
+                    id="field-phone"
                     type="tel"
+                    autoComplete="tel"
                     value={formData.phone}
                     onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
                     className="input-field"
@@ -188,8 +213,9 @@ function AcquisitionContent() {
                 </div>
 
                 <div>
-                  <label className="input-label">{t.artworkInterest}</label>
+                  <label htmlFor="field-artwork" className="input-label">{t.artworkInterest}</label>
                   <select
+                    id="field-artwork"
                     value={formData.artwork}
                     onChange={(e) => setFormData({ ...formData, artwork: e.target.value })}
                     className="input-field"
@@ -205,8 +231,9 @@ function AcquisitionContent() {
                 </div>
 
                 <div>
-                  <label className="input-label">{t.message}</label>
+                  <label htmlFor="field-message" className="input-label">{t.message}</label>
                   <textarea
+                    id="field-message"
                     rows={4}
                     value={formData.message}
                     onChange={(e) => setFormData({ ...formData, message: e.target.value })}
@@ -217,7 +244,8 @@ function AcquisitionContent() {
 
                 <button
                   type="submit"
-                  className="w-full py-3 bg-[hsl(var(--foreground))] text-[hsl(var(--background))] font-body text-sm hover:bg-[hsl(var(--accent))]"
+                  disabled={isSubmitted}
+                  className="w-full py-3 bg-[hsl(var(--foreground))] text-[hsl(var(--background))] font-body text-sm hover:bg-[hsl(var(--accent))] disabled:opacity-50"
                   style={{ transition: `background-color var(--motion-normal) var(--ease-out)` }}
                 >
                   {t.submit}

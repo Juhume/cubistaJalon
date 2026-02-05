@@ -1,7 +1,7 @@
 'use client'
 
 import React from "react"
-import { use, useState, useEffect, useRef, useCallback } from 'react'
+import { use, useState, useEffect, useRef, useCallback, useMemo } from 'react'
 import Link from 'next/link'
 import Image from 'next/image'
 import { notFound } from 'next/navigation'
@@ -32,6 +32,7 @@ function DesktopZoomViewer({
   const dragStart = useRef({ x: 0, y: 0 })
   const posStart = useRef({ x: 0, y: 0 })
   const [visible, setVisible] = useState(false)
+  const [imgError, setImgError] = useState(false)
 
   useEffect(() => {
     if (isOpen) {
@@ -43,6 +44,7 @@ function DesktopZoomViewer({
       document.body.style.overflow = 'hidden'
       setScale(1)
       setPosition({ x: 0, y: 0 })
+      setImgError(false)
       requestAnimationFrame(() => setVisible(true))
 
       return () => {
@@ -114,6 +116,9 @@ function DesktopZoomViewer({
   return (
     <div
       className="fixed inset-0 z-[70]"
+      role="dialog"
+      aria-modal="true"
+      aria-label={alt}
       style={{ opacity: visible ? 1 : 0, transition: 'opacity 300ms var(--ease-out)' }}
     >
       <div className="absolute inset-0 bg-black/95" />
@@ -149,15 +154,22 @@ function DesktopZoomViewer({
         style={{ cursor: scale > 1 ? (isDragging ? 'grabbing' : 'grab') : 'zoom-in' }}
         onPointerDown={handlePointerDown} onPointerMove={handlePointerMove}
         onPointerUp={handlePointerUp} onClick={handleClick}>
-        <div className="relative w-[80vw] h-[85vh]"
-          style={{
-            transform: `scale(${scale}) translate(${position.x / scale}px, ${position.y / scale}px)`,
-            transition: isDragging ? 'none' : 'transform 300ms var(--ease-out)',
-          }}>
-          <Image src={imageUrl || "/placeholder.svg"} alt={alt} fill
-            className="object-contain select-none" style={{ pointerEvents: 'none' }}
-            sizes="90vw" quality={95} priority />
-        </div>
+        {imgError ? (
+          <p className="font-body text-sm text-white/50">
+            {locale === 'es' ? 'No se pudo cargar la imagen' : 'Could not load image'}
+          </p>
+        ) : (
+          <div className="relative w-[80vw] h-[85vh]"
+            style={{
+              transform: `scale(${scale}) translate(${position.x / scale}px, ${position.y / scale}px)`,
+              transition: isDragging ? 'none' : 'transform 300ms var(--ease-out)',
+            }}>
+            <Image src={imageUrl || "/placeholder.svg"} alt={alt} fill
+              className="object-contain select-none" style={{ pointerEvents: 'none' }}
+              sizes="90vw" quality={95} priority
+              onError={() => setImgError(true)} />
+          </div>
+        )}
       </div>
     </div>
   )
@@ -182,6 +194,7 @@ function MobileZoomViewer({
   const imgRef = useRef<HTMLDivElement>(null)
   const [visible, setVisible] = useState(false)
   const [hint, setHint] = useState(true)
+  const [imgError, setImgError] = useState(false)
 
   // Touch state refs (not React state — too slow for 60fps touch)
   const scaleRef = useRef(1)
@@ -224,6 +237,7 @@ function MobileZoomViewer({
       scaleRef.current = 1
       posRef.current = { x: 0, y: 0 }
       setHint(true)
+      setImgError(false)
       requestAnimationFrame(() => setVisible(true))
 
       // Auto-hide hint
@@ -366,6 +380,9 @@ function MobileZoomViewer({
   return (
     <div
       className="fixed inset-0 z-[70]"
+      role="dialog"
+      aria-modal="true"
+      aria-label={alt}
       style={{ opacity: visible ? 1 : 0, transition: 'opacity 300ms var(--ease-out)' }}
     >
       <div className="absolute inset-0 bg-black" />
@@ -408,22 +425,29 @@ function MobileZoomViewer({
         ref={containerRef}
         className="absolute inset-0 flex items-center justify-center overflow-hidden"
       >
-        <div
-          ref={imgRef}
-          className="relative w-full h-full"
-          style={{ transformOrigin: 'center center' }}
-        >
-          <Image
-            src={imageUrl || "/placeholder.svg"}
-            alt={alt}
-            fill
-            className="object-contain select-none"
-            style={{ pointerEvents: 'none', padding: '12px' }}
-            sizes="100vw"
-            quality={95}
-            priority
-          />
-        </div>
+        {imgError ? (
+          <p className="font-body text-sm text-white/50">
+            {locale === 'es' ? 'No se pudo cargar la imagen' : 'Could not load image'}
+          </p>
+        ) : (
+          <div
+            ref={imgRef}
+            className="relative w-full h-full"
+            style={{ transformOrigin: 'center center' }}
+          >
+            <Image
+              src={imageUrl || "/placeholder.svg"}
+              alt={alt}
+              fill
+              className="object-contain select-none"
+              style={{ pointerEvents: 'none', padding: '12px' }}
+              sizes="100vw"
+              quality={95}
+              priority
+              onError={() => setImgError(true)}
+            />
+          </div>
+        )}
       </div>
     </div>
   )
@@ -472,6 +496,15 @@ function InquiryModal({
     message: '',
   })
   const [isSubmitted, setIsSubmitted] = useState(false)
+  const [errors, setErrors] = useState<Record<string, string>>({})
+
+  // Escape key closes modal
+  useEffect(() => {
+    if (!isOpen) return
+    const handleKey = (e: KeyboardEvent) => { if (e.key === 'Escape') onClose() }
+    window.addEventListener('keydown', handleKey)
+    return () => window.removeEventListener('keydown', handleKey)
+  }, [isOpen, onClose])
 
   const content = {
     es: {
@@ -498,15 +531,36 @@ function InquiryModal({
 
   const t = content[locale]
 
+  const validate = (): boolean => {
+    const newErrors: Record<string, string> = {}
+    if (!formData.name.trim()) {
+      newErrors.name = locale === 'es' ? 'Nombre requerido' : 'Name required'
+    }
+    if (!formData.email.trim()) {
+      newErrors.email = locale === 'es' ? 'Email requerido' : 'Email required'
+    } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email)) {
+      newErrors.email = locale === 'es' ? 'Email no válido' : 'Invalid email'
+    }
+    setErrors(newErrors)
+    return Object.keys(newErrors).length === 0
+  }
+
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault()
-    setIsSubmitted(true)
+    if (validate()) {
+      setIsSubmitted(true)
+    }
   }
 
   if (!isOpen) return null
 
   return (
-    <div className="fixed inset-0 z-[60] flex items-center justify-center p-4">
+    <div
+      className="fixed inset-0 z-[60] flex items-center justify-center p-4"
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="inquiry-title"
+    >
       <div
         className="absolute inset-0 bg-[hsl(var(--background))]/90"
         onClick={onClose}
@@ -514,7 +568,7 @@ function InquiryModal({
       <div className="relative bg-[hsl(var(--card))] border border-[hsl(var(--border))] p-6 sm:p-8 max-w-md w-full">
         <button
           onClick={onClose}
-          className="absolute top-4 right-4 text-[hsl(var(--foreground-muted))] hover:text-[hsl(var(--foreground))]"
+          className="absolute top-4 right-4 w-8 h-8 flex items-center justify-center text-[hsl(var(--foreground-muted))] hover:text-[hsl(var(--foreground))]"
           style={{ transition: `color var(--motion-fast) var(--ease-out)` }}
           aria-label={t.close}
         >
@@ -532,7 +586,7 @@ function InquiryModal({
           </p>
         </div>
 
-        <h2 className="font-display text-xl text-[hsl(var(--foreground))] mb-6">{t.title}</h2>
+        <h2 id="inquiry-title" className="font-display text-xl text-[hsl(var(--foreground))] mb-6">{t.title}</h2>
 
         {isSubmitted ? (
           <div className="py-8 text-center">
@@ -545,30 +599,37 @@ function InquiryModal({
             </button>
           </div>
         ) : (
-          <form onSubmit={handleSubmit} className="space-y-5">
+          <form onSubmit={handleSubmit} className="space-y-5" noValidate>
             <div>
-              <label className="input-label">{t.name}</label>
+              <label htmlFor="inquiry-name" className="input-label">{t.name} *</label>
               <input
+                id="inquiry-name"
                 type="text"
                 required
+                autoComplete="name"
                 value={formData.name}
-                onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                className="input-field"
+                onChange={(e) => { setFormData({ ...formData, name: e.target.value }); setErrors(prev => ({ ...prev, name: '' })) }}
+                className={`input-field ${errors.name ? 'border-[hsl(var(--accent))]' : ''}`}
               />
+              {errors.name && <p className="font-body text-xs text-[hsl(var(--accent))] mt-1">{errors.name}</p>}
             </div>
             <div>
-              <label className="input-label">{t.email}</label>
+              <label htmlFor="inquiry-email" className="input-label">{t.email} *</label>
               <input
+                id="inquiry-email"
                 type="email"
                 required
+                autoComplete="email"
                 value={formData.email}
-                onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-                className="input-field"
+                onChange={(e) => { setFormData({ ...formData, email: e.target.value }); setErrors(prev => ({ ...prev, email: '' })) }}
+                className={`input-field ${errors.email ? 'border-[hsl(var(--accent))]' : ''}`}
               />
+              {errors.email && <p className="font-body text-xs text-[hsl(var(--accent))] mt-1">{errors.email}</p>}
             </div>
             <div>
-              <label className="input-label">{t.message}</label>
+              <label htmlFor="inquiry-message" className="input-label">{t.message}</label>
               <textarea
+                id="inquiry-message"
                 rows={3}
                 value={formData.message}
                 onChange={(e) => setFormData({ ...formData, message: e.target.value })}
@@ -578,7 +639,8 @@ function InquiryModal({
             </div>
             <button
               type="submit"
-              className="w-full py-3 bg-[hsl(var(--foreground))] text-[hsl(var(--background))] font-body text-sm hover:bg-[hsl(var(--accent))]"
+              disabled={isSubmitted}
+              className="w-full py-3 bg-[hsl(var(--foreground))] text-[hsl(var(--background))] font-body text-sm hover:bg-[hsl(var(--accent))] disabled:opacity-50"
               style={{ transition: `background-color var(--motion-normal) var(--ease-out)` }}
             >
               {t.submit}
@@ -595,14 +657,17 @@ function InquiryModal({
 function RelatedWorks({ currentId, currentSeries, locale }: { currentId: string; currentSeries: string; locale: 'es' | 'en' }) {
   const allArtworks = useArtworks()
 
-  const related = allArtworks
-    .filter(a => a.id !== currentId)
-    .sort((a, b) => {
-      const aMatch = a.series === currentSeries ? 1 : 0
-      const bMatch = b.series === currentSeries ? 1 : 0
-      return bMatch - aMatch
-    })
-    .slice(0, 3)
+  const related = useMemo(() =>
+    allArtworks
+      .filter(a => a.id !== currentId)
+      .sort((a, b) => {
+        const aMatch = a.series === currentSeries ? 1 : 0
+        const bMatch = b.series === currentSeries ? 1 : 0
+        return bMatch - aMatch
+      })
+      .slice(0, 3),
+    [allArtworks, currentId, currentSeries]
+  )
 
   return (
     <section className="mt-20 sm:mt-28 border-t border-[hsl(var(--border))] pt-10 sm:pt-14">
@@ -668,6 +733,7 @@ function ArtworkDetailContent({ artwork }: { artwork: Artwork }) {
       technique: 'Técnica',
       dimensions: 'Dimensiones',
       available: 'Disponible',
+      reserved: 'Reservada',
       privateCollection: 'Colección privada',
       inquire: 'Consultar adquisición',
       back: 'Catálogo',
@@ -678,6 +744,7 @@ function ArtworkDetailContent({ artwork }: { artwork: Artwork }) {
       technique: 'Technique',
       dimensions: 'Dimensions',
       available: 'Available',
+      reserved: 'Reserved',
       privateCollection: 'Private collection',
       inquire: 'Inquire about acquisition',
       back: 'Catalogue',
@@ -777,9 +844,13 @@ function ArtworkDetailContent({ artwork }: { artwork: Artwork }) {
           <div className="lg:col-span-4">
             {/* Status */}
             <p className={`font-annotation text-sm mb-8 ${
-              currentArtwork.status === 'available' ? 'text-[hsl(var(--accent))]' : 'text-[hsl(var(--foreground-subtle))]'
+              currentArtwork.status === 'available' ? 'text-[hsl(var(--accent))]'
+              : currentArtwork.status === 'reserved' ? 'text-[hsl(var(--ultra))]'
+              : 'text-[hsl(var(--foreground-subtle))]'
             }`}>
-              {currentArtwork.status === 'available' ? t.available : t.privateCollection}
+              {currentArtwork.status === 'available' ? t.available
+                : currentArtwork.status === 'reserved' ? t.reserved
+                : t.privateCollection}
             </p>
 
             {/* Technical details — stacked labels */}

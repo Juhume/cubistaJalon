@@ -50,8 +50,8 @@ export function ExhibitionBanner({ locale }: ExhibitionBannerProps) {
             className="lg:col-span-5 flex flex-col justify-center"
             style={{
               opacity: isVisible ? 1 : 0,
-              transform: isVisible ? 'none' : 'translateY(16px)',
-              transition: 'opacity var(--motion-slow) var(--ease-out), transform var(--motion-slow) var(--ease-out)',
+              transform: isVisible ? 'translateY(0)' : 'translateY(14px)',
+              transition: 'opacity 0.6s var(--ease-out), transform 0.7s var(--ease-out)',
             }}
           >
             <p className="font-annotation text-sm text-[hsl(var(--accent))] mb-5">
@@ -94,7 +94,8 @@ export function ExhibitionBanner({ locale }: ExhibitionBannerProps) {
             className="lg:col-span-7"
             style={{
               opacity: isVisible ? 1 : 0,
-              transition: 'opacity 0.8s var(--ease-out) 200ms',
+              transform: isVisible ? 'translateY(0)' : 'translateY(12px)',
+              transition: 'opacity 0.7s var(--ease-out) 150ms, transform 0.7s var(--ease-out) 150ms',
             }}
           >
             <div className="relative crop-marks">

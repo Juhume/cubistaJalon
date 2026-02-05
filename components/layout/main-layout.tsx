@@ -1,6 +1,6 @@
 'use client'
 
-import React, { useState, createContext, useContext, useEffect, useRef } from 'react'
+import React, { useState, useMemo, createContext, useContext, useEffect, useRef } from 'react'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 
@@ -136,10 +136,10 @@ function Header({ locale, onLocaleChange }: { locale: Locale; onLocaleChange: (l
             {/* Right side */}
             <div className="flex items-center gap-4">
               {/* Language toggle */}
-              <div className="hidden sm:flex items-center gap-1 font-body text-sm">
+              <div className="hidden sm:flex items-center font-body text-sm">
                 <button
                   onClick={() => onLocaleChange('es')}
-                  className="px-1.5 py-0.5"
+                  className="px-2.5 py-2"
                   style={{
                     color: locale === 'es' ? textPrimary : textSecondary,
                     transition: `color var(--motion-normal) var(--ease-out)`,
@@ -150,7 +150,7 @@ function Header({ locale, onLocaleChange }: { locale: Locale; onLocaleChange: (l
                 <span style={{ color: textDivider, transition: `color var(--motion-normal) var(--ease-out)` }}>/</span>
                 <button
                   onClick={() => onLocaleChange('en')}
-                  className="px-1.5 py-0.5"
+                  className="px-2.5 py-2"
                   style={{
                     color: locale === 'en' ? textPrimary : textSecondary,
                     transition: `color var(--motion-normal) var(--ease-out)`,
@@ -163,8 +163,13 @@ function Header({ locale, onLocaleChange }: { locale: Locale; onLocaleChange: (l
               {/* Mobile menu toggle */}
               <button
                 onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
-                className="lg:hidden relative w-8 h-8 flex items-center justify-center"
-                aria-label={isMobileMenuOpen ? 'Cerrar menú' : 'Abrir menú'}
+                className="lg:hidden relative w-10 h-10 flex items-center justify-center"
+                aria-expanded={isMobileMenuOpen}
+                aria-controls="mobile-menu"
+                aria-label={isMobileMenuOpen
+                  ? (locale === 'es' ? 'Cerrar menú' : 'Close menu')
+                  : (locale === 'es' ? 'Abrir menú' : 'Open menu')
+                }
               >
                 <div className="relative w-5 h-3.5">
                   <span
@@ -196,7 +201,11 @@ function Header({ locale, onLocaleChange }: { locale: Locale; onLocaleChange: (l
 
       {/* Mobile menu */}
       <div
+        id="mobile-menu"
         className="fixed inset-0 z-40 lg:hidden"
+        role="dialog"
+        aria-modal={isMobileMenuOpen}
+        aria-label={locale === 'es' ? 'Menú de navegación' : 'Navigation menu'}
         style={{
           pointerEvents: isMobileMenuOpen ? 'auto' : 'none',
           visibility: isMobileMenuOpen ? 'visible' : 'hidden',
@@ -240,7 +249,8 @@ function Header({ locale, onLocaleChange }: { locale: Locale; onLocaleChange: (l
                 style={{
                   paddingLeft: `${index * 0.75}rem`,
                   opacity: isMobileMenuOpen ? 1 : 0,
-                  transform: isMobileMenuOpen ? 'none' : `translateY(8px)`,
+                  transform: isMobileMenuOpen ? 'translateY(0)' : `translateY(8px)`,
+                  willChange: 'opacity, transform',
                   transition: isMobileMenuOpen
                     ? `opacity var(--motion-normal) var(--ease-out) ${200 + index * 50}ms, transform var(--motion-normal) var(--ease-out) ${200 + index * 50}ms`
                     : `opacity 120ms var(--ease-out), transform 120ms var(--ease-out)`,
@@ -352,50 +362,104 @@ function Footer({ locale }: { locale: Locale }) {
 function PageTransition({ children }: { children: React.ReactNode }) {
   const pathname = usePathname()
   const prevPathname = useRef(pathname)
-  const [isVisible, setIsVisible] = useState(true)
-  const [displayChildren, setDisplayChildren] = useState(children)
-  const isTransitioning = useRef(false)
+  const [phase, setPhase] = useState<'idle' | 'out' | 'in'>('idle')
+  const childrenRef = useRef(children)
+  const [rendered, setRendered] = useState(children)
+  const timersRef = useRef<ReturnType<typeof setTimeout>[]>([])
+
+  // Always keep latest children in ref
+  childrenRef.current = children
 
   useEffect(() => {
-    // Skip if same path or already transitioning
-    if (pathname === prevPathname.current || isTransitioning.current) {
-      // Still update children for same-path renders
-      setDisplayChildren(children)
+    if (pathname === prevPathname.current) {
+      // Same route — just update content (no transition)
+      setRendered(children)
       return
     }
 
-    isTransitioning.current = true
+    // Clear any pending timers from interrupted transitions
+    timersRef.current.forEach(clearTimeout)
+    timersRef.current = []
 
-    // Phase 1: fade out current content (fast)
-    setIsVisible(false)
+    // Route changed — start transition
+    setPhase('out')
 
-    const timer = setTimeout(() => {
-      // Phase 2: swap content + scroll to top
-      setDisplayChildren(children)
+    const outTimer = setTimeout(() => {
+      // Swap content and scroll to top (compatible with all browsers)
+      setRendered(childrenRef.current)
       window.scrollTo(0, 0)
+      prevPathname.current = pathname
 
-      // Phase 3: fade in new content (after a frame for paint)
+      // Wait two frames for DOM paint before fading in
       requestAnimationFrame(() => {
-        setIsVisible(true)
-        prevPathname.current = pathname
-        isTransitioning.current = false
+        requestAnimationFrame(() => {
+          setPhase('in')
+          // Reset to idle after animation completes
+          const idleTimer = setTimeout(() => setPhase('idle'), 420)
+          timersRef.current.push(idleTimer)
+        })
       })
-    }, 150) // Keep this fast — just enough to feel intentional
+    }, 180)
 
-    return () => clearTimeout(timer)
-  }, [pathname, children])
+    timersRef.current.push(outTimer)
+
+    return () => {
+      timersRef.current.forEach(clearTimeout)
+      timersRef.current = []
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [pathname])
+
+  // Update rendered content on non-route re-renders (locale change, etc.)
+  useEffect(() => {
+    if (phase === 'idle') {
+      setRendered(children)
+    }
+  }, [children, phase])
+
+  const style: React.CSSProperties =
+    phase === 'out'
+      ? {
+          opacity: 0,
+          transform: 'translateY(6px)',
+          willChange: 'opacity, transform',
+          transition: 'opacity 180ms cubic-bezier(0.4, 0, 1, 1), transform 180ms cubic-bezier(0.4, 0, 1, 1)',
+        }
+      : phase === 'in'
+      ? {
+          opacity: 1,
+          transform: 'translateY(0)',
+          willChange: 'opacity, transform',
+          transition: 'opacity 420ms cubic-bezier(0, 0, 0.2, 1), transform 420ms cubic-bezier(0, 0, 0.2, 1)',
+        }
+      : { opacity: 1, transform: 'none' }
+
+  // Siena accent line — visual "cut" between pages
+  const lineStyle: React.CSSProperties =
+    phase === 'out'
+      ? {
+          transform: 'scaleX(1)',
+          transition: 'transform 180ms cubic-bezier(0.4, 0, 0.2, 1)',
+        }
+      : phase === 'in'
+      ? {
+          transform: 'scaleX(0)',
+          transformOrigin: 'right',
+          transition: 'transform 350ms cubic-bezier(0.4, 0, 0.2, 1) 100ms',
+        }
+      : { transform: 'scaleX(0)' }
 
   return (
-    <div
-      style={{
-        opacity: isVisible ? 1 : 0,
-        transition: isVisible
-          ? 'opacity 300ms var(--ease-out)'
-          : 'opacity 150ms var(--ease-out)',
-      }}
-    >
-      {displayChildren}
-    </div>
+    <>
+      {/* Transition accent line */}
+      <div
+        className="fixed top-0 left-0 right-0 z-[55] h-[2px] bg-[hsl(var(--accent))]"
+        style={{ transformOrigin: 'left', pointerEvents: 'none', ...lineStyle }}
+      />
+      <div style={style}>
+        {rendered}
+      </div>
+    </>
   )
 }
 
@@ -405,14 +469,54 @@ interface MainLayoutProps {
   children: React.ReactNode
 }
 
+function detectLocale(): Locale {
+  // 1. Check stored preference
+  if (typeof window !== 'undefined') {
+    const stored = localStorage.getItem('cj-locale')
+    if (stored === 'es' || stored === 'en') return stored
+  }
+  // 2. Detect from browser/OS language
+  if (typeof navigator !== 'undefined') {
+    const lang = navigator.language || (navigator.languages && navigator.languages[0]) || ''
+    if (lang.startsWith('es')) return 'es'
+  }
+  // 3. Default to English for non-Spanish speakers
+  return 'en'
+}
+
 export function MainLayout({ children }: MainLayoutProps) {
-  const [locale, setLocale] = useState<Locale>('es')
+  const [locale, setLocaleState] = useState<Locale>('es')
+
+  // Detect language on mount (client-side only)
+  useEffect(() => {
+    setLocaleState(detectLocale())
+  }, [])
+
+  // Sync <html lang> attribute with current locale
+  useEffect(() => {
+    document.documentElement.lang = locale
+  }, [locale])
+
+  // Persist manual locale changes
+  const setLocale = useMemo(() => (l: Locale) => {
+    localStorage.setItem('cj-locale', l)
+    setLocaleState(l)
+  }, [])
+
+  // Stable context value — only changes when locale actually changes
+  const localeValue = useMemo(() => ({ locale, setLocale }), [locale, setLocale])
 
   return (
-    <LocaleContext.Provider value={{ locale, setLocale }}>
+    <LocaleContext.Provider value={localeValue}>
       <div className="min-h-screen bg-[hsl(var(--background))]">
+        <a
+          href="#main-content"
+          className="sr-only focus:not-sr-only focus:fixed focus:top-4 focus:left-4 focus:z-[60] focus:px-4 focus:py-2 focus:bg-[hsl(var(--foreground))] focus:text-[hsl(var(--background))] focus:font-body focus:text-sm"
+        >
+          {locale === 'es' ? 'Saltar al contenido' : 'Skip to content'}
+        </a>
         <Header locale={locale} onLocaleChange={setLocale} />
-        <main>
+        <main id="main-content">
           <PageTransition>{children}</PageTransition>
         </main>
         <Footer locale={locale} />

@@ -40,8 +40,8 @@ function ArtistContent() {
           <div
             style={{
               opacity: isVisible ? 1 : 0,
-              transform: isVisible ? 'none' : 'translateY(16px)',
-              transition: `opacity var(--motion-slow) var(--ease-out), transform var(--motion-slow) var(--ease-out)`,
+              transform: isVisible ? 'translateY(0)' : 'translateY(16px)',
+              transition: 'opacity 0.6s var(--ease-out), transform 0.7s var(--ease-out)',
             }}
           >
             <p className="font-annotation text-sm text-[hsl(var(--foreground-muted))] mb-4">

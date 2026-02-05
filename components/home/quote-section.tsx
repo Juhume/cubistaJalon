@@ -52,8 +52,8 @@ export function QuoteSection({ locale }: QuoteSectionProps) {
                 style={{
                   fontStyle: 'italic',
                   opacity: isVisible ? 1 : 0,
-                  transform: isVisible ? 'none' : 'translateY(16px)',
-                  transition: 'opacity 0.8s var(--ease-out) 200ms, transform 0.8s var(--ease-out) 200ms',
+                  transform: isVisible ? 'translateY(0)' : 'translateY(12px)',
+                  transition: 'opacity 0.7s var(--ease-out) 150ms, transform 0.7s var(--ease-out) 150ms',
                 }}
               >
                 {quote}
@@ -65,7 +65,8 @@ export function QuoteSection({ locale }: QuoteSectionProps) {
               className="mt-8 sm:mt-10 flex items-center gap-4"
               style={{
                 opacity: isVisible ? 1 : 0,
-                transition: `opacity var(--motion-slow) var(--ease-out) 500ms`,
+                transform: isVisible ? 'translateY(0)' : 'translateY(6px)',
+                transition: 'opacity 0.5s var(--ease-out) 400ms, transform 0.5s var(--ease-out) 400ms',
               }}
             >
               <span className="w-10 h-px bg-[hsl(var(--accent))]" />
