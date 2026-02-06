@@ -1,0 +1,41 @@
+[
+  {
+    "id": "fragmentos-contemporaneos",
+    "title": "Fragmentos Contemporáneos",
+    "titleEn": "Contemporary Fragments",
+    "venue": "Museo del Prado",
+    "location": "Madrid, España",
+    "locationEn": "Madrid, Spain",
+    "startDate": "2026-03-15",
+    "endDate": "2026-05-30",
+    "description": "Una retrospectiva de las obras más recientes que exploran la fragmentación de la realidad contemporánea.",
+    "descriptionEn": "A retrospective of the most recent works exploring the fragmentation of contemporary reality.",
+    "imageUrl": "https://images.unsplash.com/photo-1577720643272-265f09367456?w=800&q=80"
+  },
+  {
+    "id": "perspectivas-multiples",
+    "title": "Perspectivas Múltiples",
+    "titleEn": "Multiple Perspectives",
+    "venue": "MACBA",
+    "location": "Barcelona, España",
+    "locationEn": "Barcelona, Spain",
+    "startDate": "2025-09-01",
+    "endDate": "2025-12-15",
+    "description": "Diálogo entre el cubismo histórico y la visión contemporánea del artista.",
+    "descriptionEn": "Dialogue between historical cubism and the contemporary vision of the artist.",
+    "imageUrl": "https://images.unsplash.com/photo-1518998053901-5348d3961a04?w=800&q=80"
+  },
+  {
+    "id": "geometrias-del-alma",
+    "title": "Geometrías del Alma",
+    "titleEn": "Geometries of the Soul",
+    "venue": "White Cube",
+    "location": "Londres, Reino Unido",
+    "locationEn": "London, United Kingdom",
+    "startDate": "2025-04-10",
+    "endDate": "2025-07-20",
+    "description": "Primera exposición internacional del artista en una de las galerías más prestigiosas del mundo.",
+    "descriptionEn": "First international exhibition of the artist at one of the most prestigious galleries in the world.",
+    "imageUrl": "https://images.unsplash.com/photo-1460661419201-fd4cecdf8a8b?w=800&q=80"
+  }
+]

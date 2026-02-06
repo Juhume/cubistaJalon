@@ -3,19 +3,21 @@
 import { useEffect, useState } from 'react'
 import Image from 'next/image'
 import { MainLayout, useLocale } from '@/components/layout/main-layout'
-import { exhibitions } from '@/lib/artworks'
+import { isCurrentExhibition } from '@/lib/artworks'
+import { useExhibitions } from '@/lib/use-exhibitions'
 
 function ExhibitionsContent() {
   const { locale } = useLocale()
   const [isVisible, setIsVisible] = useState(false)
+  const exhibitions = useExhibitions()
 
   useEffect(() => {
     const timer = setTimeout(() => setIsVisible(true), 50)
     return () => clearTimeout(timer)
   }, [])
 
-  const currentExhibition = exhibitions.find(e => e.isCurrent)
-  const pastExhibitions = exhibitions.filter(e => !e.isCurrent)
+  const currentExhibition = exhibitions.find(isCurrentExhibition)
+  const pastExhibitions = exhibitions.filter(e => !isCurrentExhibition(e))
 
   const content = {
     es: {
@@ -87,7 +89,7 @@ function ExhibitionsContent() {
 
               <div className="space-y-1 mb-5">
                 <p className="font-body text-sm text-[hsl(var(--foreground))]">
-                  {currentExhibition.venue}, {currentExhibition.location}
+                  {currentExhibition.venue}, {locale === 'es' ? currentExhibition.location : currentExhibition.locationEn}
                 </p>
                 <p className="font-body text-sm text-[hsl(var(--foreground-muted))]">
                   {formatDate(currentExhibition.startDate)} &mdash; {formatDate(currentExhibition.endDate)}
@@ -165,7 +167,7 @@ function ExhibitionsContent() {
                     </span>
 
                     <span className="font-body text-sm text-[hsl(var(--foreground-muted))] shrink-0">
-                      {exhibition.venue}, {exhibition.location}
+                      {exhibition.venue}, {locale === 'es' ? exhibition.location : exhibition.locationEn}
                     </span>
                   </div>
                 </div>

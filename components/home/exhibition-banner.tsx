@@ -3,7 +3,8 @@
 import { useEffect, useState } from 'react'
 import Link from 'next/link'
 import Image from 'next/image'
-import { exhibitions } from '@/lib/artworks'
+import { isCurrentExhibition } from '@/lib/artworks'
+import { useExhibitions } from '@/lib/use-exhibitions'
 import { useInView } from '@/lib/hooks'
 
 interface ExhibitionBannerProps {
@@ -13,6 +14,7 @@ interface ExhibitionBannerProps {
 export function ExhibitionBanner({ locale }: ExhibitionBannerProps) {
   const { ref: sectionRef, isVisible } = useInView(0.1)
   const [isDesktop, setIsDesktop] = useState(false)
+  const exhibitions = useExhibitions()
 
   useEffect(() => {
     const mq = window.matchMedia('(min-width: 1024px)')
@@ -22,7 +24,7 @@ export function ExhibitionBanner({ locale }: ExhibitionBannerProps) {
     return () => mq.removeEventListener('change', handler)
   }, [])
 
-  const currentExhibition = exhibitions.find(e => e.isCurrent)
+  const currentExhibition = exhibitions.find(isCurrentExhibition)
   if (!currentExhibition) return null
 
   const content = {
@@ -111,7 +113,7 @@ export function ExhibitionBanner({ locale }: ExhibitionBannerProps) {
 
             <div className="space-y-1 mb-5">
               <p className="font-body text-sm text-[hsl(var(--foreground))]">
-                {currentExhibition.venue}, {currentExhibition.location}
+                {currentExhibition.venue}, {locale === 'es' ? currentExhibition.location : currentExhibition.locationEn}
               </p>
               <p className="font-body text-sm text-[hsl(var(--foreground))]">
                 {formatDate(currentExhibition.startDate)} &mdash; {formatDate(currentExhibition.endDate)}

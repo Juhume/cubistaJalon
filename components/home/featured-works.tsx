@@ -80,9 +80,11 @@ function HeroPiece({
               className="w-8 h-px bg-[hsl(var(--accent))] group-hover:w-16"
               style={{ transition: 'width var(--motion-normal) var(--ease-out)' }}
             />
-            <span className="font-body text-xs tracking-[0.1em] uppercase text-[hsl(var(--ultra))]">
-              {series}
-            </span>
+            {series && (
+              <span className="font-body text-xs tracking-[0.1em] uppercase text-[hsl(var(--ultra))]">
+                {series}
+              </span>
+            )}
           </div>
 
           <h3
@@ -205,9 +207,11 @@ function PairedWorkCard({
             className="w-6 h-px bg-[hsl(var(--accent))] group-hover:w-12"
             style={{ transition: 'width var(--motion-normal) var(--ease-out)' }}
           />
-          <span className="font-body text-xs tracking-[0.1em] uppercase text-[hsl(var(--ultra))]">
-            {series}
-          </span>
+          {series && (
+            <span className="font-body text-xs tracking-[0.1em] uppercase text-[hsl(var(--ultra))]">
+              {series}
+            </span>
+          )}
         </div>
 
         <h3
@@ -249,16 +253,19 @@ export function FeaturedWorks({ locale }: FeaturedWorksProps) {
     pairs.push({ left: remaining[i], right: remaining[i + 1] })
   }
 
+  const totalCount = artworks.length
+  const seriesCount = new Set(artworks.map(a => a.series)).size
+
   const content = {
     es: {
       label: 'Obras seleccionadas',
       viewAll: 'Catálogo completo',
-      viewAllSub: '8 obras · 6 series',
+      viewAllSub: `${totalCount} obras · ${seriesCount} series`,
     },
     en: {
       label: 'Selected works',
       viewAll: 'Full catalogue',
-      viewAllSub: '8 works · 6 series',
+      viewAllSub: `${totalCount} works · ${seriesCount} series`,
     },
   }
 

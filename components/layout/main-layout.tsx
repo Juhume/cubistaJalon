@@ -3,6 +3,7 @@
 import React, { useState, useMemo, createContext, useContext, useEffect, useLayoutEffect, useRef } from 'react'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
+import { useContact } from '@/lib/use-contact'
 
 type Locale = 'es' | 'en'
 
@@ -32,6 +33,7 @@ function Header({ locale, onLocaleChange }: { locale: Locale; onLocaleChange: (l
   const [isScrolled, setIsScrolled] = useState(false)
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false)
   const pathname = usePathname()
+  const contact = useContact()
   const isHome = pathname === '/'
 
   // On the home page, the header sits over the dark hero.
@@ -297,7 +299,7 @@ function Header({ locale, onLocaleChange }: { locale: Locale; onLocaleChange: (l
 
           {/* Instagram */}
           <a
-            href="https://instagram.com/cubistajalon_"
+            href={contact.instagram.url}
             target="_blank"
             rel="noopener noreferrer"
             className="flex items-center gap-2 mt-4 font-body text-sm text-[hsl(var(--foreground-muted))] hover:text-[hsl(var(--accent))]"
@@ -309,7 +311,7 @@ function Header({ locale, onLocaleChange }: { locale: Locale; onLocaleChange: (l
               <circle cx="12" cy="12" r="5" />
               <circle cx="17.5" cy="6.5" r="1" fill="currentColor" stroke="none" />
             </svg>
-            @cubistajalon_
+            {contact.instagram.handle}
           </a>
         </nav>
       </div>
@@ -318,6 +320,7 @@ function Header({ locale, onLocaleChange }: { locale: Locale; onLocaleChange: (l
 }
 
 function Footer({ locale }: { locale: Locale }) {
+  const contact = useContact()
   const currentYear = new Date().getFullYear()
 
   return (
@@ -341,14 +344,14 @@ function Footer({ locale }: { locale: Locale }) {
             {/* Right — contact + legal */}
             <div className="flex flex-col sm:items-end gap-3">
               <a
-                href="mailto:info@cubistajalon.com"
+                href={`mailto:${contact.email}`}
                 className="font-body text-sm text-[hsl(var(--foreground-light-muted))] hover:text-[hsl(var(--accent))] link-underline"
                 style={{ transition: `color var(--motion-fast) var(--ease-out)` }}
               >
-                info@cubistajalon.com
+                {contact.email}
               </a>
               <a
-                href="https://instagram.com/cubistajalon_"
+                href={contact.instagram.url}
                 target="_blank"
                 rel="noopener noreferrer"
                 className="flex items-center gap-2 font-body text-sm text-[hsl(var(--foreground-light-muted))] hover:text-[hsl(var(--accent))]"
@@ -360,7 +363,7 @@ function Footer({ locale }: { locale: Locale }) {
                   <circle cx="12" cy="12" r="5" />
                   <circle cx="17.5" cy="6.5" r="1" fill="currentColor" stroke="none" />
                 </svg>
-                @cubistajalon_
+                {contact.instagram.handle}
               </a>
               <p className="font-body text-xs text-[hsl(var(--foreground-light-muted))]">
                 &copy; {currentYear} &mdash; {locale === 'es' ? 'Todos los derechos reservados' : 'All rights reserved'}

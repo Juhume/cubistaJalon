@@ -25,12 +25,12 @@ export interface Exhibition {
   titleEn: string
   venue: string
   location: string
+  locationEn: string
   startDate: string
   endDate: string
   description: string
   descriptionEn: string
   imageUrl: string
-  isCurrent: boolean
 }
 
 export const artworks: Artwork[] = [
@@ -179,12 +179,12 @@ export const exhibitions: Exhibition[] = [
     titleEn: 'Contemporary Fragments',
     venue: 'Galería Marlborough',
     location: 'Madrid, España',
+    locationEn: 'Madrid, Spain',
     startDate: '2026-03-15',
     endDate: '2026-05-30',
     description: 'Una retrospectiva de las obras más recientes que exploran la fragmentación de la realidad contemporánea.',
     descriptionEn: 'A retrospective of the most recent works exploring the fragmentation of contemporary reality.',
     imageUrl: 'https://images.unsplash.com/photo-1577720643272-265f09367456?w=800&q=80',
-    isCurrent: true,
   },
   {
     id: 'perspectivas-multiples',
@@ -192,12 +192,12 @@ export const exhibitions: Exhibition[] = [
     titleEn: 'Multiple Perspectives',
     venue: 'MACBA',
     location: 'Barcelona, España',
+    locationEn: 'Barcelona, Spain',
     startDate: '2025-09-01',
     endDate: '2025-12-15',
     description: 'Diálogo entre el cubismo histórico y la visión contemporánea del artista.',
     descriptionEn: 'Dialogue between historical cubism and the contemporary vision of the artist.',
     imageUrl: 'https://images.unsplash.com/photo-1518998053901-5348d3961a04?w=800&q=80',
-    isCurrent: false,
   },
   {
     id: 'geometrias-del-alma',
@@ -205,12 +205,12 @@ export const exhibitions: Exhibition[] = [
     titleEn: 'Geometries of the Soul',
     venue: 'White Cube',
     location: 'Londres, Reino Unido',
+    locationEn: 'London, United Kingdom',
     startDate: '2025-04-10',
     endDate: '2025-07-20',
     description: 'Primera exposición internacional del artista en una de las galerías más prestigiosas del mundo.',
     descriptionEn: 'First international exhibition of the artist at one of the most prestigious galleries in the world.',
     imageUrl: 'https://images.unsplash.com/photo-1460661419201-fd4cecdf8a8b?w=800&q=80',
-    isCurrent: false,
   },
 ]
 
@@ -238,6 +238,7 @@ export const artistBio = {
   birthYear: 1953,
   birthMonth: 'Febrero',
   birthPlace: 'Madrid, España',
+  birthPlaceEn: 'Madrid, Spain',
   statement: {
     es: 'Mi trabajo es un diálogo constante entre la tradición cubista y la fragmentación de la experiencia contemporánea. Desde mi estudio en el Círculo de Bellas Artes de Madrid, cada lienzo es un intento de capturar la multiplicidad de perspectivas que definen nuestra percepción del mundo.',
     en: 'My work is a constant dialogue between the cubist tradition and the fragmentation of contemporary experience. From my studio at the Círculo de Bellas Artes in Madrid, each canvas is an attempt to capture the multiplicity of perspectives that define our perception of the world.',
@@ -253,4 +254,21 @@ export const artistBio = {
     { year: 2005, event: { es: 'Retrospectiva en el Museo Reina Sofía', en: 'Retrospective at Museo Reina Sofía' } },
     { year: 2025, event: { es: 'Exposición en White Cube, Londres', en: 'Exhibition at White Cube, London' } },
   ],
+}
+
+export function getStatusLabel(
+  status: string,
+  locale: 'es' | 'en',
+  variant: 'short' | 'long' = 'short'
+): string {
+  const labels: Record<string, Record<'es' | 'en', { short: string; long: string }>> = {
+    available: { es: { short: 'Disponible', long: 'Disponible' }, en: { short: 'Available', long: 'Available' } },
+    reserved: { es: { short: 'Reservada', long: 'Reservada' }, en: { short: 'Reserved', long: 'Reserved' } },
+    sold: { es: { short: 'Col. privada', long: 'Colección privada' }, en: { short: 'Private col.', long: 'Private collection' } },
+  }
+  return labels[status]?.[locale]?.[variant] ?? status
+}
+
+export function isCurrentExhibition(e: Exhibition): boolean {
+  return new Date(e.endDate) >= new Date()
 }

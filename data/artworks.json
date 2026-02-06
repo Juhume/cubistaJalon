@@ -89,7 +89,7 @@
     "dimensions": "90 x 70 cm",
     "series": "Sinestesias",
     "seriesEn": "Synesthesias",
-    "status": "reserved",
+    "status": "available",
     "featured": false,
     "description": "La música traducida en formas geométricas y color, una sinfonía visual que invita a escuchar con los ojos.",
     "descriptionEn": "Music translated into geometric forms and color, a visual symphony that invites you to listen with your eyes.",
@@ -157,6 +157,26 @@
     "gridSpan": {
       "cols": 5,
       "rows": 2
+    }
+  },
+  {
+    "id": "prueba",
+    "title": "prueba",
+    "titleEn": "prueba",
+    "year": 2023,
+    "technique": "Acrílico sobre madera",
+    "techniqueEn": "Acrylic on wood",
+    "dimensions": "180 x 140 cm",
+    "series": "Movimiento",
+    "seriesEn": "Movement",
+    "status": "available",
+    "featured": false,
+    "description": "La urbe contemporánea fragmentada en planos geométricos que capturan la energía caótica de la vida urbana.",
+    "descriptionEn": "The contemporary city fragmented into geometric planes capturing the chaotic energy of urban life.",
+    "imageUrl": "https://images.unsplash.com/photo-1605721911519-3dfeb3be25e7?w=800&q=80",
+    "gridSpan": {
+      "cols": 4,
+      "rows": 1
     }
   }
 ]

@@ -57,7 +57,7 @@ function ArtistContent() {
                 {artistBio.name}
               </p>
               <p className="font-body text-sm text-[hsl(var(--foreground-subtle))]">
-                {artistBio.birthPlace} &middot; {artistBio.birthYear}
+                {locale === 'es' ? artistBio.birthPlace : artistBio.birthPlaceEn} &middot; {artistBio.birthYear}
               </p>
             </div>
 

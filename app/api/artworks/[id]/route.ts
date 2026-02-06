@@ -35,7 +35,9 @@ export async function PATCH(
   ])
   const VALID_STATUSES = new Set(['available', 'sold', 'reserved'])
   const MAX_STRING_LENGTH = 5000
-  const STRING_FIELDS = ['title', 'titleEn', 'technique', 'techniqueEn', 'dimensions', 'series', 'seriesEn', 'description', 'descriptionEn', 'imageUrl']
+  const STRING_FIELDS = ['title', 'titleEn', 'technique', 'techniqueEn', 'dimensions', 'description', 'descriptionEn', 'imageUrl']
+  // series/seriesEn are optional (can be empty string)
+  const OPTIONAL_STRING_FIELDS = ['series', 'seriesEn']
 
   const unknownFields = Object.keys(body).filter(k => k !== 'id' && !ALLOWED_FIELDS.has(k))
   if (unknownFields.length > 0) {
@@ -74,6 +76,16 @@ export async function PATCH(
       }
       if (body[field].trim() === '') {
         return NextResponse.json({ error: `${field} cannot be empty` }, { status: 400 })
+      }
+      if (body[field].length > MAX_STRING_LENGTH) {
+        return NextResponse.json({ error: `${field} exceeds maximum length (${MAX_STRING_LENGTH})` }, { status: 400 })
+      }
+    }
+  }
+  for (const field of OPTIONAL_STRING_FIELDS) {
+    if (field in body) {
+      if (typeof body[field] !== 'string') {
+        return NextResponse.json({ error: `${field} must be a string` }, { status: 400 })
       }
       if (body[field].length > MAX_STRING_LENGTH) {
         return NextResponse.json({ error: `${field} exceeds maximum length (${MAX_STRING_LENGTH})` }, { status: 400 })

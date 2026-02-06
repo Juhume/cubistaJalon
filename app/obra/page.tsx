@@ -5,8 +5,9 @@ import Link from 'next/link'
 import Image from 'next/image'
 import { useSearchParams } from 'next/navigation'
 import { MainLayout, useLocale } from '@/components/layout/main-layout'
-import { series, type Artwork } from '@/lib/artworks'
+import { getStatusLabel, type Artwork } from '@/lib/artworks'
 import { useArtworks } from '@/lib/use-artworks'
+import { useSeries } from '@/lib/use-series'
 
 /* ─── Desktop: editorial work row with hover interaction ─── */
 function WorkRow({
@@ -59,12 +60,7 @@ function WorkRow({
             : 'text-[hsl(var(--foreground-subtle))]'
         }
       `}>
-        {artwork.status === 'available'
-          ? (locale === 'es' ? 'Disponible' : 'Available')
-          : artwork.status === 'reserved'
-            ? (locale === 'es' ? 'Reservada' : 'Reserved')
-            : (locale === 'es' ? 'Col. privada' : 'Private col.')
-        }
+        {getStatusLabel(artwork.status, locale)}
       </span>
     </Link>
   )
@@ -138,12 +134,7 @@ function ArtworkCard({
         ? 'text-[hsl(var(--ultra))]'
         : 'text-[hsl(var(--foreground-subtle))]'
 
-  const statusLabel =
-    artwork.status === 'available'
-      ? (locale === 'es' ? 'Disponible' : 'Available')
-      : artwork.status === 'reserved'
-        ? (locale === 'es' ? 'Reservada' : 'Reserved')
-        : (locale === 'es' ? 'Col. privada' : 'Private col.')
+  const statusLabel = getStatusLabel(artwork.status, locale)
 
   return (
     <Link
@@ -188,9 +179,11 @@ function ArtworkCard({
             {statusLabel}
           </span>
         </div>
-        <p className="font-body text-xs uppercase tracking-[0.06em] text-[hsl(var(--foreground-subtle))]">
-          {locale === 'es' ? artwork.series : artwork.seriesEn}
-        </p>
+        {(artwork.series || artwork.seriesEn) && (
+          <p className="font-body text-xs uppercase tracking-[0.06em] text-[hsl(var(--foreground-subtle))]">
+            {locale === 'es' ? artwork.series : artwork.seriesEn}
+          </p>
+        )}
       </div>
     </Link>
   )
@@ -199,6 +192,7 @@ function ArtworkCard({
 function GalleryContent() {
   const { locale } = useLocale()
   const artworks = useArtworks()
+  const series = useSeries()
   const searchParams = useSearchParams()
 
   // Initialize from URL params
@@ -230,7 +224,7 @@ function GalleryContent() {
   // Artworks filtered by series only (used for contextual status counts)
   const seriesFiltered = useMemo(() => {
     if (selectedSeries === 'all') return artworks
-    return artworks.filter(a => a.series.toLowerCase().replace(/\s+/g, '-') === selectedSeries)
+    return artworks.filter(a => (a.series || '').toLowerCase().replace(/\s+/g, '-') === selectedSeries)
   }, [selectedSeries, artworks])
 
   // Combined filter: series + availability toggle
@@ -272,7 +266,7 @@ function GalleryContent() {
     const seriesMap = new Map<string, Artwork[]>()
 
     filteredArtworks.forEach(a => {
-      const key = a.series
+      const key = a.series || ''
       if (!seriesMap.has(key)) seriesMap.set(key, [])
       seriesMap.get(key)!.push(a)
     })
@@ -280,7 +274,7 @@ function GalleryContent() {
     seriesMap.forEach((works, seriesName) => {
       groups.push({
         series: seriesName,
-        seriesEn: works[0].seriesEn,
+        seriesEn: works[0].seriesEn || '',
         works,
       })
     })
@@ -398,7 +392,7 @@ function GalleryContent() {
             {groupedArtworks.length > 0 ? (
               groupedArtworks.map((group) => (
                 <div key={group.series} className="mb-8">
-                  {selectedSeries === 'all' && (
+                  {selectedSeries === 'all' && group.series && (
                     <h2 className="flex items-center gap-2 font-body text-xs tracking-[0.08em] uppercase text-[hsl(var(--ultra))] mb-3 mt-6 first:mt-0">
                       <span className="inline-block w-2 h-2 bg-[hsl(var(--accent))]" aria-hidden="true" />
                       {locale === 'es' ? group.series : group.seriesEn}

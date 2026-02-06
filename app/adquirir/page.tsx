@@ -4,6 +4,7 @@ import React from "react"
 import { useEffect, useState } from 'react'
 import { MainLayout, useLocale } from '@/components/layout/main-layout'
 import { useArtworks } from '@/lib/use-artworks'
+import { useContact } from '@/lib/use-contact'
 
 function AcquisitionContent() {
   const { locale } = useLocale()
@@ -24,6 +25,7 @@ function AcquisitionContent() {
   }, [])
 
   const artworks = useArtworks()
+  const contact = useContact()
   const availableArtworks = artworks.filter(a => a.status === 'available')
 
   const content = {
@@ -277,14 +279,14 @@ function AcquisitionContent() {
                 {t.contact}
               </p>
               <a
-                href="mailto:info@cubistajalon.com"
+                href={`mailto:${contact.email}`}
                 className="font-body text-sm text-[hsl(var(--foreground))] hover:text-[hsl(var(--accent))] link-underline"
                 style={{ transition: `color var(--motion-fast) var(--ease-out)` }}
               >
-                info@cubistajalon.com
+                {contact.email}
               </a>
               <a
-                href="https://instagram.com/cubistajalon_"
+                href={contact.instagram.url}
                 target="_blank"
                 rel="noopener noreferrer"
                 className="flex items-center gap-2 mt-2 font-body text-sm text-[hsl(var(--foreground-muted))] hover:text-[hsl(var(--accent))]"
@@ -296,7 +298,7 @@ function AcquisitionContent() {
                   <circle cx="12" cy="12" r="5" />
                   <circle cx="17.5" cy="6.5" r="1" fill="currentColor" stroke="none" />
                 </svg>
-                @cubistajalon_
+                {contact.instagram.handle}
               </a>
             </div>
           </aside>

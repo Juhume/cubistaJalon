@@ -48,8 +48,19 @@ export async function POST(request: NextRequest) {
   // Required string fields
   const requiredStrings = [
     'id', 'title', 'titleEn', 'technique', 'techniqueEn',
-    'dimensions', 'series', 'seriesEn', 'description', 'descriptionEn', 'imageUrl',
+    'dimensions', 'description', 'descriptionEn', 'imageUrl',
   ]
+  // series/seriesEn are optional — validate type and length only if present
+  for (const field of ['series', 'seriesEn']) {
+    if (field in body && body[field] != null) {
+      if (typeof body[field] !== 'string') {
+        return NextResponse.json({ error: `${field} must be a string` }, { status: 400 })
+      }
+      if (body[field].length > MAX_STRING_LENGTH) {
+        return NextResponse.json({ error: `${field} exceeds maximum length (${MAX_STRING_LENGTH})` }, { status: 400 })
+      }
+    }
+  }
   for (const field of requiredStrings) {
     if (typeof body[field] !== 'string' || body[field].trim() === '') {
       return NextResponse.json({ error: `${field} is required and must be a non-empty string` }, { status: 400 })
@@ -105,8 +116,8 @@ export async function POST(request: NextRequest) {
     technique: body.technique.trim(),
     techniqueEn: body.techniqueEn.trim(),
     dimensions: body.dimensions.trim(),
-    series: body.series.trim(),
-    seriesEn: body.seriesEn.trim(),
+    series: (body.series || '').trim(),
+    seriesEn: (body.seriesEn || '').trim(),
     status: body.status,
     featured: body.featured ?? false,
     description: body.description.trim(),

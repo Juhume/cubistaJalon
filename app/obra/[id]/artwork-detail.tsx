@@ -5,7 +5,7 @@ import { useState, useEffect, useRef, useCallback, useMemo } from 'react'
 import Link from 'next/link'
 import Image from 'next/image'
 import { MainLayout, useLocale } from '@/components/layout/main-layout'
-import { type Artwork, artistBio } from '@/lib/artworks'
+import { type Artwork, artistBio, getStatusLabel } from '@/lib/artworks'
 import { useArtwork, useArtworks } from '@/lib/use-artworks'
 
 /* ─── Career Timeline ─── */
@@ -253,7 +253,7 @@ function DesktopZoomViewer({
         <p className="font-body text-xs text-white/50">
           {scale > 1
             ? (locale === 'es' ? 'Arrastra para explorar' : 'Drag to explore')
-            : (locale === 'es' ? 'Click para ampliar' : 'Click to zoom in')}
+            : (locale === 'es' ? 'Clic para ampliar' : 'Click to zoom in')}
         </p>
       </div>
 
@@ -293,7 +293,7 @@ function DesktopZoomViewer({
         }}
       >
         <p className="font-body text-xs text-white/50">
-          {locale === 'es' ? 'Contempla la obra · Click para ampliar' : 'Contemplate the work · Click to zoom'}
+          {locale === 'es' ? 'Contempla la obra · Clic para ampliar' : 'Contemplate the work · Click to zoom'}
         </p>
       </div>
 
@@ -898,8 +898,8 @@ function RelatedWorks({
       discover: locale === 'es' ? 'Descubrir' : 'Discover',
     }
 
-    // Same series
-    const sameSeries = others.filter(a => a.series === currentSeries && !used.has(a.id)).slice(0, 2)
+    // Same series (skip if no series assigned)
+    const sameSeries = currentSeries ? others.filter(a => a.series === currentSeries && !used.has(a.id)).slice(0, 2) : []
     if (sameSeries.length > 0) {
       sameSeries.forEach(a => used.add(a.id))
       cats.push({ label: labels.series, works: sameSeries })
@@ -1009,9 +1009,6 @@ export default function ArtworkDetailContent({ artwork }: { artwork: Artwork }) 
       year: 'Año',
       technique: 'Técnica',
       dimensions: 'Dimensiones',
-      available: 'Disponible',
-      reserved: 'Reservada',
-      privateCollection: 'Colección privada',
       inquire: 'Consultar adquisición',
       back: 'Catálogo',
       zoom: 'Ampliar',
@@ -1020,9 +1017,6 @@ export default function ArtworkDetailContent({ artwork }: { artwork: Artwork }) 
       year: 'Year',
       technique: 'Technique',
       dimensions: 'Dimensions',
-      available: 'Available',
-      reserved: 'Reserved',
-      privateCollection: 'Private collection',
       inquire: 'Inquire about acquisition',
       back: 'Catalogue',
       zoom: 'Zoom',
@@ -1052,10 +1046,14 @@ export default function ArtworkDetailContent({ artwork }: { artwork: Artwork }) 
             </svg>
             <span className="font-body text-xs">{t.back}</span>
           </Link>
-          <span className="text-[hsl(var(--border-strong))] font-body text-xs">/</span>
-          <span className="font-body text-xs text-[hsl(var(--foreground-subtle))]">
-            {locale === 'es' ? currentArtwork.series : currentArtwork.seriesEn}
-          </span>
+          {(currentArtwork.series || currentArtwork.seriesEn) && (
+            <>
+              <span className="text-[hsl(var(--border-strong))] font-body text-xs">/</span>
+              <span className="font-body text-xs text-[hsl(var(--foreground-subtle))]">
+                {locale === 'es' ? currentArtwork.series : currentArtwork.seriesEn}
+              </span>
+            </>
+          )}
         </div>
 
         {/* ── Title ── */}
@@ -1125,9 +1123,7 @@ export default function ArtworkDetailContent({ artwork }: { artwork: Artwork }) 
               : currentArtwork.status === 'reserved' ? 'text-[hsl(var(--ultra))]'
               : 'text-[hsl(var(--foreground-subtle))]'
             }`}>
-              {currentArtwork.status === 'available' ? t.available
-                : currentArtwork.status === 'reserved' ? t.reserved
-                : t.privateCollection}
+              {getStatusLabel(currentArtwork.status, locale, 'long')}
             </p>
 
             {/* Technical details — stacked labels */}
