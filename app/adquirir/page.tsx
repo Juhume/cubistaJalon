@@ -160,7 +160,7 @@ function AcquisitionContent() {
           {/* Form */}
           <section>
             <div className="mb-8 pb-3 border-b border-[hsl(var(--accent))]">
-              <p className="font-body text-xs tracking-[0.1em] uppercase text-[hsl(var(--foreground))]">
+              <p className="font-body text-sm tracking-[0.1em] uppercase text-[hsl(var(--foreground))]">
                 {t.formTitle}
               </p>
             </div>
@@ -282,6 +282,21 @@ function AcquisitionContent() {
                 style={{ transition: `color var(--motion-fast) var(--ease-out)` }}
               >
                 info@cubistajalon.com
+              </a>
+              <a
+                href="https://instagram.com/cubistajalon_"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="flex items-center gap-2 mt-2 font-body text-sm text-[hsl(var(--foreground-muted))] hover:text-[hsl(var(--accent))]"
+                style={{ transition: `color var(--motion-fast) var(--ease-out)` }}
+                aria-label={locale === 'es' ? 'Seguir en Instagram' : 'Follow on Instagram'}
+              >
+                <svg viewBox="0 0 24 24" className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth="1.5">
+                  <rect x="2" y="2" width="20" height="20" rx="5" />
+                  <circle cx="12" cy="12" r="5" />
+                  <circle cx="17.5" cy="6.5" r="1" fill="currentColor" stroke="none" />
+                </svg>
+                @cubistajalon_
               </a>
             </div>
           </aside>

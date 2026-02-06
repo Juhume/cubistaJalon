@@ -225,6 +225,13 @@ export const series = [
   { id: 'movimiento', name: 'Movimiento', nameEn: 'Movement' },
 ]
 
+export const statuses = [
+  { id: 'all', name: 'Todas', nameEn: 'All' },
+  { id: 'available', name: 'Disponible', nameEn: 'Available' },
+  { id: 'reserved', name: 'Reservada', nameEn: 'Reserved' },
+  { id: 'sold', name: 'Col. privada', nameEn: 'Private col.' },
+]
+
 export const artistBio = {
   name: 'Alfredo Huerta Esteban',
   artistName: 'Cubista Jalón',

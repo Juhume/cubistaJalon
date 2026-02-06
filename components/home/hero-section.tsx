@@ -11,6 +11,7 @@ interface HeroSectionProps {
 
 export function HeroSection({ locale }: HeroSectionProps) {
   const [phase, setPhase] = useState(0)
+  const [scrolled, setScrolled] = useState(false)
 
   useEffect(() => {
     const t1 = setTimeout(() => setPhase(1), 100)
@@ -20,6 +21,12 @@ export function HeroSection({ locale }: HeroSectionProps) {
       clearTimeout(t1)
       clearTimeout(t2)
     }
+  }, [])
+
+  useEffect(() => {
+    const onScroll = () => setScrolled(window.scrollY > 50)
+    window.addEventListener('scroll', onScroll, { passive: true })
+    return () => window.removeEventListener('scroll', onScroll)
   }, [])
 
   const heroWork = artworks.find(a => a.featured) || artworks[0]
@@ -107,7 +114,7 @@ export function HeroSection({ locale }: HeroSectionProps) {
         >
           <div className="flex items-center gap-4">
             <span className="w-6 h-px bg-[hsl(var(--accent))]" aria-hidden="true" />
-            <span className="font-body text-xs tracking-[0.08em] uppercase text-[hsl(var(--foreground-light-muted))]">
+            <span className="font-body text-sm tracking-[0.08em] uppercase text-[hsl(var(--foreground-light-muted))]">
               Madrid, 1953
             </span>
           </div>
@@ -123,6 +130,19 @@ export function HeroSection({ locale }: HeroSectionProps) {
             </svg>
           </Link>
         </div>
+      </div>
+
+      {/* Scroll cue — vertical line + siena diamond */}
+      <div
+        className="absolute bottom-6 left-1/2 -translate-x-1/2 z-[10] flex flex-col items-center gap-2 pointer-events-none"
+        aria-hidden="true"
+        style={{
+          opacity: phase >= 2 && !scrolled ? 0.4 : 0,
+          transition: 'opacity var(--motion-slow) var(--ease-out)',
+        }}
+      >
+        <span className="w-px h-8 bg-[hsl(var(--foreground-light))]" />
+        <span className="w-2 h-2 bg-[hsl(var(--accent))] animate-scroll-bob" />
       </div>
     </section>
   )

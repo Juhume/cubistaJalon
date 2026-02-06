@@ -129,7 +129,7 @@ function ExhibitionsContent() {
           <section className="pb-16 sm:pb-24">
             <div className="mb-8">
               <span className="inline-block w-2 h-2 bg-[hsl(var(--accent))] mr-2.5 align-middle" aria-hidden="true" />
-              <span className="font-body text-xs tracking-[0.08em] uppercase text-[hsl(var(--foreground-muted))] align-middle">
+              <span className="font-body text-sm tracking-[0.08em] uppercase text-[hsl(var(--foreground-muted))] align-middle">
                 {t.past}
               </span>
             </div>
@@ -138,21 +138,36 @@ function ExhibitionsContent() {
               {pastExhibitions.map((exhibition) => (
                 <div
                   key={exhibition.id}
-                  className="flex flex-col sm:flex-row sm:items-baseline gap-2 sm:gap-8 py-5 border-b border-[hsl(var(--border))] group"
+                  className="flex items-center gap-4 sm:gap-8 py-5 border-b border-[hsl(var(--border))] group hover:bg-[hsl(var(--accent)/0.04)]"
+                  style={{ transition: `background-color var(--motion-fast) var(--ease-out)` }}
                 >
-                  <span className="font-body text-xs text-[hsl(var(--foreground-subtle))] shrink-0 sm:w-36">
-                    {formatDateShort(exhibition.startDate)} &mdash; {formatDateShort(exhibition.endDate)}
-                  </span>
+                  {/* Thumbnail */}
+                  <div className="relative w-12 h-12 sm:w-16 sm:h-16 shrink-0 overflow-hidden bg-[hsl(var(--muted))]">
+                    <Image
+                      src={exhibition.imageUrl}
+                      alt=""
+                      fill
+                      className="object-cover transition-transform group-hover:scale-105"
+                      style={{ transitionDuration: '0.6s', transitionTimingFunction: 'var(--ease-out)' }}
+                      sizes="64px"
+                    />
+                  </div>
 
-                  <span className="font-display text-lg text-[hsl(var(--foreground))] flex-1 group-hover:text-[hsl(var(--accent))]"
-                    style={{ transition: `color var(--motion-fast) var(--ease-out)` }}
-                  >
-                    {locale === 'es' ? exhibition.title : exhibition.titleEn}
-                  </span>
+                  <div className="flex flex-col sm:flex-row sm:items-baseline gap-1 sm:gap-8 flex-1 min-w-0">
+                    <span className="font-body text-xs text-[hsl(var(--foreground-subtle))] shrink-0 sm:w-36">
+                      {formatDateShort(exhibition.startDate)} &mdash; {formatDateShort(exhibition.endDate)}
+                    </span>
 
-                  <span className="font-body text-sm text-[hsl(var(--foreground-muted))] shrink-0">
-                    {exhibition.venue}, {exhibition.location}
-                  </span>
+                    <span className="font-display text-lg text-[hsl(var(--foreground))] flex-1 group-hover:text-[hsl(var(--accent))]"
+                      style={{ transition: `color var(--motion-fast) var(--ease-out)` }}
+                    >
+                      {locale === 'es' ? exhibition.title : exhibition.titleEn}
+                    </span>
+
+                    <span className="font-body text-sm text-[hsl(var(--foreground-muted))] shrink-0">
+                      {exhibition.venue}, {exhibition.location}
+                    </span>
+                  </div>
                 </div>
               ))}
             </div>

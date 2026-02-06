@@ -3,6 +3,7 @@ import { join } from 'path'
 import { type Artwork, artworks as seedArtworks } from './artworks'
 
 const DATA_PATH = join(process.cwd(), 'data', 'artworks.json')
+const FALLBACK_PATH = join('/tmp', 'artworks.json')
 
 // In-memory cache — avoids readFileSync on every request
 let cachedData: Artwork[] | null = null
@@ -13,6 +14,18 @@ function readData(): Artwork[] {
   // Return cache if fresh
   if (cachedData && Date.now() - cacheTime < CACHE_TTL) {
     return cachedData
+  }
+
+  // Try /tmp first (Vercel writes go here)
+  if (existsSync(FALLBACK_PATH)) {
+    try {
+      const raw = readFileSync(FALLBACK_PATH, 'utf-8')
+      cachedData = JSON.parse(raw) as Artwork[]
+      cacheTime = Date.now()
+      return cachedData
+    } catch {
+      // Corrupted fallback — continue to primary path
+    }
   }
 
   if (!existsSync(DATA_PATH)) {
@@ -36,7 +49,14 @@ function invalidateCache() {
 }
 
 function writeData(artworks: Artwork[]): void {
-  writeFileSync(DATA_PATH, JSON.stringify(artworks, null, 2), 'utf-8')
+  const json = JSON.stringify(artworks, null, 2)
+
+  try {
+    writeFileSync(DATA_PATH, json, 'utf-8')
+  } catch {
+    // Read-only filesystem (Vercel) — write to /tmp instead
+    writeFileSync(FALLBACK_PATH, json, 'utf-8')
+  }
   invalidateCache()
 }
 

@@ -56,7 +56,7 @@ function ArtistContent() {
               <p className="font-body text-sm text-[hsl(var(--foreground-muted))]">
                 {artistBio.name}
               </p>
-              <p className="font-body text-xs text-[hsl(var(--foreground-subtle))]">
+              <p className="font-body text-sm text-[hsl(var(--foreground-subtle))]">
                 {artistBio.birthPlace} &middot; {artistBio.birthYear}
               </p>
             </div>
@@ -130,7 +130,7 @@ function ArtistContent() {
       <section className="container-gallery py-14 sm:py-20">
         <div className="mb-10">
           <span className="inline-block w-2.5 h-2.5 bg-[hsl(var(--ultra))] mr-3 align-middle" aria-hidden="true" />
-          <span className="font-body text-xs tracking-[0.1em] uppercase text-[hsl(var(--foreground-muted))] align-middle">
+          <span className="font-body text-sm tracking-[0.1em] uppercase text-[hsl(var(--foreground-muted))] align-middle">
             {t.biography}
           </span>
         </div>

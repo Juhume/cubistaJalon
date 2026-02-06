@@ -1,6 +1,6 @@
 'use client'
 
-import React, { useState, useMemo, createContext, useContext, useEffect, useRef } from 'react'
+import React, { useState, useMemo, createContext, useContext, useEffect, useLayoutEffect, useRef } from 'react'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 
@@ -294,6 +294,23 @@ function Header({ locale, onLocaleChange }: { locale: Locale; onLocaleChange: (l
               English
             </button>
           </div>
+
+          {/* Instagram */}
+          <a
+            href="https://instagram.com/cubistajalon_"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="flex items-center gap-2 mt-4 font-body text-sm text-[hsl(var(--foreground-muted))] hover:text-[hsl(var(--accent))]"
+            style={{ transition: 'color var(--motion-fast) var(--ease-out)' }}
+            aria-label={locale === 'es' ? 'Seguir en Instagram' : 'Follow on Instagram'}
+          >
+            <svg viewBox="0 0 24 24" className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth="1.5">
+              <rect x="2" y="2" width="20" height="20" rx="5" />
+              <circle cx="12" cy="12" r="5" />
+              <circle cx="17.5" cy="6.5" r="1" fill="currentColor" stroke="none" />
+            </svg>
+            @cubistajalon_
+          </a>
         </nav>
       </div>
     </>
@@ -304,19 +321,19 @@ function Footer({ locale }: { locale: Locale }) {
   const currentYear = new Date().getFullYear()
 
   return (
-    <footer className="relative bg-[hsl(var(--background))]">
-      <div className="border-t border-[hsl(var(--border))]">
+    <footer className="relative bg-[hsl(var(--background-dark))]">
+      <div className="border-t border-[hsl(var(--foreground-light)/0.1)]">
         <div className="container-gallery py-12 sm:py-16">
           <div className="flex flex-col sm:flex-row items-start sm:items-end justify-between gap-8">
             {/* Left — identity */}
             <div>
-              <p className="font-display text-xl text-[hsl(var(--foreground))] mb-2">
+              <p className="font-display text-xl text-[hsl(var(--foreground-light))] mb-2">
                 Cubista Jalón
               </p>
-              <p className="font-annotation text-sm text-[hsl(var(--foreground-muted))]">
+              <p className="font-annotation text-sm text-[hsl(var(--foreground-light-muted))]">
                 Alfredo Huerta Esteban
               </p>
-              <p className="font-body text-xs text-[hsl(var(--foreground-subtle))] mt-1">
+              <p className="font-body text-sm text-[hsl(var(--foreground-light-muted))] mt-1">
                 Madrid, 1953
               </p>
             </div>
@@ -325,12 +342,27 @@ function Footer({ locale }: { locale: Locale }) {
             <div className="flex flex-col sm:items-end gap-3">
               <a
                 href="mailto:info@cubistajalon.com"
-                className="font-body text-sm text-[hsl(var(--foreground-muted))] hover:text-[hsl(var(--accent))] link-underline"
+                className="font-body text-sm text-[hsl(var(--foreground-light-muted))] hover:text-[hsl(var(--accent))] link-underline"
                 style={{ transition: `color var(--motion-fast) var(--ease-out)` }}
               >
                 info@cubistajalon.com
               </a>
-              <p className="font-body text-[0.7rem] text-[hsl(var(--foreground-subtle))]">
+              <a
+                href="https://instagram.com/cubistajalon_"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="flex items-center gap-2 font-body text-sm text-[hsl(var(--foreground-light-muted))] hover:text-[hsl(var(--accent))]"
+                style={{ transition: `color var(--motion-fast) var(--ease-out)` }}
+                aria-label={locale === 'es' ? 'Seguir en Instagram' : 'Follow on Instagram'}
+              >
+                <svg viewBox="0 0 24 24" className="w-3.5 h-3.5" fill="none" stroke="currentColor" strokeWidth="1.5">
+                  <rect x="2" y="2" width="20" height="20" rx="5" />
+                  <circle cx="12" cy="12" r="5" />
+                  <circle cx="17.5" cy="6.5" r="1" fill="currentColor" stroke="none" />
+                </svg>
+                @cubistajalon_
+              </a>
+              <p className="font-body text-xs text-[hsl(var(--foreground-light-muted))]">
                 &copy; {currentYear} &mdash; {locale === 'es' ? 'Todos los derechos reservados' : 'All rights reserved'}
               </p>
             </div>
@@ -341,8 +373,8 @@ function Footer({ locale }: { locale: Locale }) {
         <div className="container-gallery pb-6">
           <div className="flex items-end justify-between">
             <span
-              className="font-display text-[3.5rem] sm:text-[4.5rem] leading-none text-[hsl(var(--foreground))] select-none"
-              style={{ opacity: 0.04 }}
+              className="font-display text-[3.5rem] sm:text-[4.5rem] leading-none text-[hsl(var(--foreground-light))] select-none"
+              style={{ opacity: 0.06 }}
               aria-hidden="true"
             >
               CJ
@@ -464,6 +496,55 @@ function PageTransition({ children }: { children: React.ReactNode }) {
   )
 }
 
+/* ─── Scroll to Top ─── */
+
+function ScrollToTop({ locale }: { locale: Locale }) {
+  const [visible, setVisible] = useState(false)
+
+  useEffect(() => {
+    const onScroll = () => setVisible(window.scrollY > 400)
+    window.addEventListener('scroll', onScroll, { passive: true })
+    onScroll()
+    return () => window.removeEventListener('scroll', onScroll)
+  }, [])
+
+  const handleClick = () => {
+    window.scrollTo({ top: 0, behavior: 'smooth' })
+  }
+
+  return (
+    <button
+      onClick={handleClick}
+      className="fixed bottom-6 right-6 sm:bottom-8 sm:right-8 z-40 group"
+      style={{
+        opacity: visible ? 1 : 0,
+        transform: visible ? 'translateY(0)' : 'translateY(12px)',
+        pointerEvents: visible ? 'auto' : 'none',
+        transition: 'opacity var(--motion-normal) var(--ease-out), transform var(--motion-normal) var(--ease-out)',
+      }}
+      aria-label={locale === 'es' ? 'Volver arriba' : 'Back to top'}
+    >
+      {/* Diamond container — rotated square with siena accent */}
+      <div
+        className="w-10 h-10 sm:w-11 sm:h-11 rotate-45 border border-[hsl(var(--accent)/0.4)] bg-[hsl(var(--background)/0.9)] backdrop-blur-sm group-hover:bg-[hsl(var(--accent))] group-hover:border-[hsl(var(--accent))]"
+        style={{ transition: 'background-color var(--motion-normal) var(--ease-out), border-color var(--motion-normal) var(--ease-out)' }}
+      >
+        {/* Arrow — counter-rotated to stay upright */}
+        <svg
+          viewBox="0 0 24 24"
+          className="w-4 h-4 sm:w-[18px] sm:h-[18px] absolute top-1/2 left-1/2 -rotate-45 -translate-x-1/2 -translate-y-1/2 text-[hsl(var(--accent))] group-hover:text-[hsl(var(--background))]"
+          style={{ transition: 'color var(--motion-normal) var(--ease-out)' }}
+          fill="none"
+          stroke="currentColor"
+          strokeWidth="1.5"
+        >
+          <path d="M12 19V5M5 12L12 5L19 12" />
+        </svg>
+      </div>
+    </button>
+  )
+}
+
 /* ─── Main Layout ─── */
 
 interface MainLayoutProps {
@@ -488,8 +569,9 @@ function detectLocale(): Locale {
 export function MainLayout({ children }: MainLayoutProps) {
   const [locale, setLocaleState] = useState<Locale>('es')
 
-  // Detect language on mount (client-side only)
-  useEffect(() => {
+  // Detect language before first paint — useLayoutEffect runs synchronously
+  // after hydration but before the browser paints, preventing any visible flash.
+  useLayoutEffect(() => {
     setLocaleState(detectLocale())
   }, [])
 
@@ -521,6 +603,7 @@ export function MainLayout({ children }: MainLayoutProps) {
           <PageTransition>{children}</PageTransition>
         </main>
         <Footer locale={locale} />
+        <ScrollToTop locale={locale} />
       </div>
     </LocaleContext.Provider>
   )

@@ -125,6 +125,8 @@ export default function AdminPage() {
   const [message, setMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null)
   const [showAddForm, setShowAddForm] = useState(false)
   const [newArtwork, setNewArtwork] = useState<NewArtworkForm>(emptyForm)
+  const [editingId, setEditingId] = useState<string | null>(null)
+  const [pendingDelete, setPendingDelete] = useState<Artwork | null>(null)
 
   const authHeaders = useCallback(() => ({
     'Authorization': `Bearer ${token}`,
@@ -201,8 +203,14 @@ export default function AdminPage() {
     }
   }
 
-  const handleDelete = async (artwork: Artwork) => {
-    if (!confirm(`Eliminar "${artwork.title}"?\n\nEsta acción no se puede deshacer.`)) return
+  const handleDelete = (artwork: Artwork) => {
+    setPendingDelete(artwork)
+  }
+
+  const confirmDelete = async () => {
+    if (!pendingDelete) return
+    const artwork = pendingDelete
+    setPendingDelete(null)
     try {
       const res = await fetch(`/api/artworks/${artwork.id}`, {
         method: 'DELETE',
@@ -257,6 +265,77 @@ export default function AdminPage() {
     }
   }
 
+  const handleEdit = (artwork: Artwork) => {
+    setNewArtwork({
+      id: artwork.id,
+      title: artwork.title,
+      titleEn: artwork.titleEn,
+      year: String(artwork.year),
+      technique: artwork.technique,
+      techniqueEn: artwork.techniqueEn,
+      dimensions: artwork.dimensions,
+      series: artwork.series,
+      seriesEn: artwork.seriesEn,
+      status: artwork.status,
+      description: artwork.description,
+      descriptionEn: artwork.descriptionEn,
+      imageUrl: artwork.imageUrl,
+    })
+    setEditingId(artwork.id)
+    setShowAddForm(true)
+    window.scrollTo({ top: 0, behavior: 'smooth' })
+  }
+
+  const handleUpdateArtwork = async (e: React.FormEvent) => {
+    e.preventDefault()
+    if (!editingId) return
+    try {
+      const body: Partial<Artwork> = {
+        title: newArtwork.title,
+        titleEn: newArtwork.titleEn,
+        year: parseInt(newArtwork.year, 10),
+        technique: newArtwork.technique,
+        techniqueEn: newArtwork.techniqueEn,
+        dimensions: newArtwork.dimensions,
+        series: newArtwork.series,
+        seriesEn: newArtwork.seriesEn,
+        status: newArtwork.status,
+        description: newArtwork.description,
+        descriptionEn: newArtwork.descriptionEn,
+        imageUrl: newArtwork.imageUrl,
+      }
+      const res = await fetch(`/api/artworks/${editingId}`, {
+        method: 'PATCH',
+        headers: authHeaders(),
+        body: JSON.stringify(body),
+      })
+      if (!res.ok) {
+        if (res.status === 401) {
+          setMessage({ type: 'error', text: 'Sesión expirada' })
+          setIsAuthenticated(false)
+          return
+        }
+        const err = await res.json()
+        throw new Error(err.error || 'Error al actualizar')
+      }
+      const updated = await res.json() as Artwork
+      setArtworks(prev => prev.map(a => a.id === editingId ? updated : a))
+      setMessage({ type: 'success', text: `Actualizada: ${newArtwork.title}` })
+      setNewArtwork(emptyForm)
+      setEditingId(null)
+      setShowAddForm(false)
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : 'Error actualizando obra'
+      setMessage({ type: 'error', text: msg })
+    }
+  }
+
+  const cancelForm = () => {
+    setShowAddForm(false)
+    setEditingId(null)
+    setNewArtwork(emptyForm)
+  }
+
   // Auto-generate slug from title
   const handleTitleChange = (title: string) => {
     const slug = title
@@ -287,7 +366,7 @@ export default function AdminPage() {
           </div>
 
           <div>
-            <label className="block font-body text-[0.7rem] tracking-[0.08em] uppercase text-[hsl(var(--foreground-light-muted))] mb-2">
+            <label className="block font-body text-xs tracking-[0.08em] uppercase text-[hsl(var(--foreground-light-muted))] mb-2">
               Token de acceso
             </label>
             <input
@@ -334,6 +413,52 @@ export default function AdminPage() {
       {/* Toast notifications */}
       {message && <Toast message={message} onDismiss={() => setMessage(null)} />}
 
+      {/* Delete confirmation modal */}
+      {pendingDelete && (
+        <div
+          className="fixed inset-0 z-[60] flex items-center justify-center p-4"
+          onClick={() => setPendingDelete(null)}
+        >
+          <div className="absolute inset-0 bg-[hsl(var(--background-dark))] opacity-80" />
+          <div
+            className="relative w-full max-w-sm border border-[hsl(var(--border))] bg-[hsl(var(--background))] p-6"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="flex items-start gap-4 mb-6">
+              <span className="shrink-0 mt-0.5 inline-flex items-center justify-center w-8 h-8 border border-red-400 text-red-400">
+                <svg viewBox="0 0 24 24" className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth="1.5">
+                  <path d="M12 9v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                </svg>
+              </span>
+              <div>
+                <h3 className="font-display text-base text-[hsl(var(--foreground))]">
+                  Eliminar obra
+                </h3>
+                <p className="font-body text-sm text-[hsl(var(--foreground-muted))] mt-1">
+                  Vas a eliminar <span className="text-[hsl(var(--foreground))]">&ldquo;{pendingDelete.title}&rdquo;</span>. Esta acción no se puede deshacer.
+                </p>
+              </div>
+            </div>
+            <div className="flex justify-end gap-3">
+              <button
+                onClick={() => setPendingDelete(null)}
+                className="py-2 px-4 font-body text-sm text-[hsl(var(--foreground-muted))] border border-[hsl(var(--border))] hover:text-[hsl(var(--foreground))]"
+                style={{ transition: 'all var(--motion-fast) var(--ease-out)' }}
+              >
+                Cancelar
+              </button>
+              <button
+                onClick={confirmDelete}
+                className="py-2 px-4 font-body text-sm bg-red-500 text-white hover:bg-red-600"
+                style={{ transition: 'background-color var(--motion-fast) var(--ease-out)' }}
+              >
+                Eliminar
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Header bar */}
       <div className="border-b border-[hsl(var(--border))] bg-[hsl(var(--background))]">
         <div className="max-w-6xl mx-auto px-5 sm:px-8 py-4 flex items-center justify-between">
@@ -349,7 +474,13 @@ export default function AdminPage() {
           </div>
           <div className="flex items-center gap-3">
             <button
-              onClick={() => setShowAddForm(!showAddForm)}
+              onClick={() => {
+                if (showAddForm) {
+                  cancelForm()
+                } else {
+                  setShowAddForm(true)
+                }
+              }}
               className="py-2 px-4 font-body text-sm bg-[hsl(var(--foreground))] text-[hsl(var(--background))] hover:bg-[hsl(var(--accent))]"
               style={{ transition: 'background-color var(--motion-normal) var(--ease-out)' }}
             >
@@ -369,9 +500,11 @@ export default function AdminPage() {
       <div className="max-w-6xl mx-auto px-5 sm:px-8 py-8">
         {/* Add form */}
         {showAddForm && (
-          <form onSubmit={handleAddArtwork} className="mb-10 border border-[hsl(var(--border))] bg-[hsl(var(--card))]">
+          <form onSubmit={editingId ? handleUpdateArtwork : handleAddArtwork} className="mb-10 border border-[hsl(var(--border))] bg-[hsl(var(--card))]">
             <div className="p-5 border-b border-[hsl(var(--border))] flex items-center justify-between">
-              <h2 className="font-display text-lg text-[hsl(var(--foreground))]">Nueva obra</h2>
+              <h2 className="font-display text-lg text-[hsl(var(--foreground))]">
+                {editingId ? `Editar: ${newArtwork.title}` : 'Nueva obra'}
+              </h2>
               <p className="font-body text-xs text-[hsl(var(--foreground-subtle))]">
                 Todos los campos son obligatorios
               </p>
@@ -427,6 +560,8 @@ export default function AdminPage() {
                       value={newArtwork.id}
                       onChange={(e) => setNewArtwork({ ...newArtwork, id: e.target.value })}
                       className="input-field text-[hsl(var(--foreground-subtle))]"
+                      readOnly={!!editingId}
+                      style={editingId ? { opacity: 0.5, cursor: 'not-allowed' } : undefined}
                     />
                   </div>
                 </div>
@@ -555,13 +690,21 @@ export default function AdminPage() {
             </div>
 
             {/* Submit */}
-            <div className="p-5 border-t border-[hsl(var(--border))] flex justify-end">
+            <div className="p-5 border-t border-[hsl(var(--border))] flex justify-end gap-3">
+              <button
+                type="button"
+                onClick={cancelForm}
+                className="py-2.5 px-6 font-body text-sm text-[hsl(var(--foreground-muted))] border border-[hsl(var(--border))] hover:text-[hsl(var(--foreground))]"
+                style={{ transition: 'all var(--motion-fast) var(--ease-out)' }}
+              >
+                Cancelar
+              </button>
               <button
                 type="submit"
                 className="py-2.5 px-6 bg-[hsl(var(--foreground))] text-[hsl(var(--background))] font-body text-sm hover:bg-[hsl(var(--accent))]"
                 style={{ transition: 'background-color var(--motion-normal) var(--ease-out)' }}
               >
-                Crear obra
+                {editingId ? 'Guardar cambios' : 'Crear obra'}
               </button>
             </div>
           </form>
@@ -603,7 +746,7 @@ export default function AdminPage() {
                       <span className="font-display text-sm text-[hsl(var(--foreground))]">
                         {artwork.title}
                       </span>
-                      <span className="block font-body text-[0.7rem] text-[hsl(var(--foreground-subtle))] mt-0.5">
+                      <span className="block font-body text-xs text-[hsl(var(--foreground-subtle))] mt-0.5">
                         {artwork.titleEn}
                       </span>
                     </td>
@@ -623,7 +766,14 @@ export default function AdminPage() {
                         updating={updatingId === artwork.id}
                       />
                     </td>
-                    <td className="py-3 text-right">
+                    <td className="py-3 text-right whitespace-nowrap">
+                      <button
+                        onClick={() => handleEdit(artwork)}
+                        className="font-body text-xs text-[hsl(var(--foreground-subtle))] hover:text-[hsl(var(--accent))] py-1 px-2"
+                        style={{ transition: 'color var(--motion-fast) var(--ease-out)' }}
+                      >
+                        Editar
+                      </button>
                       <button
                         onClick={() => handleDelete(artwork)}
                         className="font-body text-xs text-[hsl(var(--foreground-subtle))] hover:text-red-500 py-1 px-2"

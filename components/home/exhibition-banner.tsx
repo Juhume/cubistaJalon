@@ -1,5 +1,6 @@
 'use client'
 
+import { useEffect, useState } from 'react'
 import Link from 'next/link'
 import Image from 'next/image'
 import { exhibitions } from '@/lib/artworks'
@@ -11,6 +12,15 @@ interface ExhibitionBannerProps {
 
 export function ExhibitionBanner({ locale }: ExhibitionBannerProps) {
   const { ref: sectionRef, isVisible } = useInView(0.1)
+  const [isDesktop, setIsDesktop] = useState(false)
+
+  useEffect(() => {
+    const mq = window.matchMedia('(min-width: 1024px)')
+    setIsDesktop(mq.matches)
+    const handler = (e: MediaQueryListEvent) => setIsDesktop(e.matches)
+    mq.addEventListener('change', handler)
+    return () => mq.removeEventListener('change', handler)
+  }, [])
 
   const currentExhibition = exhibitions.find(e => e.isCurrent)
   if (!currentExhibition) return null
@@ -37,20 +47,57 @@ export function ExhibitionBanner({ locale }: ExhibitionBannerProps) {
     })
   }
 
+  // Directional reveals: text slides from left, image from right (desktop only)
+  const textHidden = isDesktop ? 'translateX(-14px)' : 'translateY(14px)'
+  const imageHidden = isDesktop ? 'translateX(14px)' : 'translateY(12px)'
+
   return (
     <section
       ref={sectionRef}
-      className="relative border-t border-[hsl(var(--border))]"
+      className="relative bg-[hsl(var(--card))]"
     >
-      <div className="container-gallery py-16 sm:py-20 lg:py-28">
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-12">
+      <div className="container-gallery py-20 sm:py-28 lg:py-36" style={{ maxWidth: '1520px' }}>
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-16">
 
-          {/* Text content */}
+          {/* Image — cinematic aspect ratio (inverted: image first on desktop) */}
           <div
-            className="lg:col-span-5 flex flex-col justify-center"
+            className="lg:col-span-7 order-1 lg:order-1"
             style={{
               opacity: isVisible ? 1 : 0,
-              transform: isVisible ? 'translateY(0)' : 'translateY(14px)',
+              transform: isVisible ? 'translate(0, 0)' : imageHidden,
+              transition: 'opacity 0.7s var(--ease-out) 150ms, transform 0.7s var(--ease-out) 150ms',
+            }}
+          >
+            <div className="relative crop-marks">
+              <div className="relative aspect-[16/10] overflow-hidden bg-[hsl(var(--muted))]">
+                <Image
+                  src={currentExhibition.imageUrl || "/placeholder.svg"}
+                  alt={locale === 'es' ? currentExhibition.title : currentExhibition.titleEn}
+                  fill
+                  className="object-cover animate-ken-burns"
+                  sizes="(max-width: 1024px) 100vw, 58vw"
+                />
+              </div>
+            </div>
+
+            {/* Siena accent line below image */}
+            <div
+              className="h-[2px] bg-[hsl(var(--accent))] mt-3"
+              style={{
+                opacity: isVisible ? 0.6 : 0,
+                transform: isVisible ? 'scaleX(1)' : 'scaleX(0)',
+                transformOrigin: 'left',
+                transition: 'transform 0.8s var(--ease-smooth) 400ms, opacity 0.6s var(--ease-out) 400ms',
+              }}
+            />
+          </div>
+
+          {/* Text content (inverted: text after image on desktop, col 9-12) */}
+          <div
+            className="lg:col-span-5 lg:col-start-8 flex flex-col justify-center order-2 lg:order-2"
+            style={{
+              opacity: isVisible ? 1 : 0,
+              transform: isVisible ? 'translate(0, 0)' : textHidden,
               transition: 'opacity 0.6s var(--ease-out), transform 0.7s var(--ease-out)',
             }}
           >
@@ -88,40 +135,18 @@ export function ExhibitionBanner({ locale }: ExhibitionBannerProps) {
               </Link>
             </div>
           </div>
-
-          {/* Image — cinematic aspect ratio */}
-          <div
-            className="lg:col-span-7"
-            style={{
-              opacity: isVisible ? 1 : 0,
-              transform: isVisible ? 'translateY(0)' : 'translateY(12px)',
-              transition: 'opacity 0.7s var(--ease-out) 150ms, transform 0.7s var(--ease-out) 150ms',
-            }}
-          >
-            <div className="relative crop-marks">
-              <div className="relative aspect-[16/10] overflow-hidden bg-[hsl(var(--muted))]">
-                <Image
-                  src={currentExhibition.imageUrl || "/placeholder.svg"}
-                  alt={locale === 'es' ? currentExhibition.title : currentExhibition.titleEn}
-                  fill
-                  className="object-cover"
-                  sizes="(max-width: 1024px) 100vw, 58vw"
-                />
-              </div>
-            </div>
-
-            {/* Siena accent line below image */}
-            <div
-              className="h-[2px] bg-[hsl(var(--accent))] mt-3"
-              style={{
-                opacity: isVisible ? 0.6 : 0,
-                transform: isVisible ? 'scaleX(1)' : 'scaleX(0)',
-                transformOrigin: 'left',
-                transition: 'transform 0.8s var(--ease-smooth) 400ms, opacity 0.6s var(--ease-out) 400ms',
-              }}
-            />
-          </div>
         </div>
+
+        {/* Ultramarino closing accent */}
+        <div
+          className="w-24 h-[2px] bg-[hsl(var(--ultra))] opacity-40 mt-12"
+          style={{
+            opacity: isVisible ? 0.4 : 0,
+            transform: isVisible ? 'scaleX(1)' : 'scaleX(0)',
+            transformOrigin: 'left',
+            transition: 'transform 0.8s var(--ease-smooth) 500ms, opacity 0.6s var(--ease-out) 500ms',
+          }}
+        />
       </div>
     </section>
   )

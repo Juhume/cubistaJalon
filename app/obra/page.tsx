@@ -1,12 +1,14 @@
 'use client'
 
-import { useState, useEffect, useRef, useMemo } from 'react'
+import { useState, useEffect, useRef, useMemo, useCallback, Suspense } from 'react'
 import Link from 'next/link'
 import Image from 'next/image'
+import { useSearchParams } from 'next/navigation'
 import { MainLayout, useLocale } from '@/components/layout/main-layout'
 import { series, type Artwork } from '@/lib/artworks'
 import { useArtworks } from '@/lib/use-artworks'
 
+/* ─── Desktop: editorial work row with hover interaction ─── */
 function WorkRow({
   artwork,
   locale,
@@ -42,33 +44,14 @@ function WorkRow({
       >
         {locale === 'es' ? artwork.title : artwork.titleEn}
       </span>
-      <span className="w-full pl-[44px] sm:hidden flex items-center gap-1.5 mt-0.5">
-        <span className="font-body text-xs text-[hsl(var(--foreground-muted))]">
-          {artwork.year}
-        </span>
-        <span className="text-[hsl(var(--foreground-subtle))] text-xs">&middot;</span>
-        <span className={`font-annotation text-xs ${
-          artwork.status === 'available'
-            ? 'text-[hsl(var(--accent))]'
-            : artwork.status === 'reserved'
-              ? 'text-[hsl(var(--ultra))]'
-              : 'text-[hsl(var(--foreground-subtle))]'
-        }`}>
-          {artwork.status === 'available'
-            ? (locale === 'es' ? 'Disponible' : 'Available')
-            : artwork.status === 'reserved'
-              ? (locale === 'es' ? 'Reservada' : 'Reserved')
-              : (locale === 'es' ? 'Col. privada' : 'Private col.')}
-        </span>
-      </span>
-      <span className="font-body text-xs text-[hsl(var(--foreground-muted))] hidden sm:block shrink-0">
+      <span className="font-body text-xs text-[hsl(var(--foreground-muted))] shrink-0">
         {artwork.year}
       </span>
       <span className="font-body text-xs text-[hsl(var(--foreground-subtle))] hidden md:block shrink-0 w-28 text-right">
         {artwork.dimensions}
       </span>
       <span className={`
-        font-annotation text-xs shrink-0 hidden sm:block w-24 text-right
+        font-annotation text-xs shrink-0 w-24 text-right
         ${artwork.status === 'available'
           ? 'text-[hsl(var(--accent))]'
           : artwork.status === 'reserved'
@@ -87,40 +70,198 @@ function WorkRow({
   )
 }
 
+/* ─── Tablet & Mobile: image card ─── */
+function ArtworkCard({
+  artwork,
+  locale,
+  index,
+}: {
+  artwork: Artwork
+  locale: 'es' | 'en'
+  index: number
+}) {
+  const ref = useRef<HTMLAnchorElement>(null)
+  const [visible, setVisible] = useState(false)
+  const [isTablet, setIsTablet] = useState(false)
+
+  useEffect(() => {
+    const el = ref.current
+    if (!el) return
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        if (entry.isIntersecting) {
+          setVisible(true)
+          observer.disconnect()
+        }
+      },
+      { threshold: 0.1 }
+    )
+    observer.observe(el)
+    return () => observer.disconnect()
+  }, [])
+
+  useEffect(() => {
+    const smMq = window.matchMedia('(min-width: 640px)')
+    setIsTablet(smMq.matches)
+    const handler = (e: MediaQueryListEvent) => setIsTablet(e.matches)
+    smMq.addEventListener('change', handler)
+    return () => smMq.removeEventListener('change', handler)
+  }, [])
+
+  const { cols, rows } = artwork.gridSpan
+
+  // Tablet (sm, 6 cols): 3-tier widths
+  // Mobile (2 cols): big pieces full, small pieces half
+  const gridStyle: React.CSSProperties = isTablet
+    ? {
+        gridColumn: cols >= 7
+          ? 'span 6'
+          : (cols >= 5 && rows >= 2)
+            ? 'span 4'
+            : cols >= 5
+              ? 'span 3'
+              : rows >= 2
+                ? 'span 3'
+                : 'span 2',
+        gridRow: rows >= 2 ? 'span 2' : undefined,
+      }
+    : {
+        gridColumn: (cols >= 6 || rows >= 2) ? 'span 2' : 'span 1',
+      }
+
+  const aspectClass = rows >= 2 ? 'aspect-[4/5]' : 'aspect-[5/4]'
+
+  const statusColor =
+    artwork.status === 'available'
+      ? 'text-[hsl(var(--accent))]'
+      : artwork.status === 'reserved'
+        ? 'text-[hsl(var(--ultra))]'
+        : 'text-[hsl(var(--foreground-subtle))]'
+
+  const statusLabel =
+    artwork.status === 'available'
+      ? (locale === 'es' ? 'Disponible' : 'Available')
+      : artwork.status === 'reserved'
+        ? (locale === 'es' ? 'Reservada' : 'Reserved')
+        : (locale === 'es' ? 'Col. privada' : 'Private col.')
+
+  return (
+    <Link
+      ref={ref}
+      href={`/obra/${artwork.id}`}
+      className="group block"
+      style={{
+        ...gridStyle,
+        opacity: visible ? 1 : 0,
+        transform: visible ? 'translateY(0)' : 'translateY(12px)',
+        transition: `opacity 0.5s var(--ease-out) ${Math.min(index * 40, 300)}ms, transform 0.6s var(--ease-out) ${Math.min(index * 40, 300)}ms`,
+      }}
+    >
+      {/* Image with crop-marks */}
+      <div className="relative crop-marks">
+        <div className={`relative ${aspectClass} overflow-hidden bg-[hsl(var(--muted))]`}>
+          <Image
+            src={artwork.imageUrl}
+            alt={locale === 'es' ? artwork.title : artwork.titleEn}
+            fill
+            className="object-cover transition-transform group-hover:scale-[1.02]"
+            style={{ transitionDuration: '0.8s', transitionTimingFunction: 'var(--ease-out)' }}
+            sizes="(max-width: 640px) 50vw, 33vw"
+          />
+        </div>
+      </div>
+
+      {/* Card metadata */}
+      <div className="mt-3 space-y-0.5">
+        <h3
+          className="font-display text-sm sm:text-base text-[hsl(var(--foreground))] leading-snug group-hover:text-[hsl(var(--accent))]"
+          style={{ transition: 'color var(--motion-fast) var(--ease-out)' }}
+        >
+          {locale === 'es' ? artwork.title : artwork.titleEn}
+        </h3>
+        <div className="flex items-baseline gap-1.5">
+          <span className="font-body text-xs text-[hsl(var(--foreground-muted))]">
+            {artwork.year}
+          </span>
+          <span className="text-[hsl(var(--foreground-subtle))] text-xs">&middot;</span>
+          <span className={`font-annotation text-xs ${statusColor}`}>
+            {statusLabel}
+          </span>
+        </div>
+        <p className="font-body text-xs uppercase tracking-[0.06em] text-[hsl(var(--foreground-subtle))]">
+          {locale === 'es' ? artwork.series : artwork.seriesEn}
+        </p>
+      </div>
+    </Link>
+  )
+}
+
 function GalleryContent() {
   const { locale } = useLocale()
   const artworks = useArtworks()
-  const [selectedSeries, setSelectedSeries] = useState('all')
-  const [filteredArtworks, setFilteredArtworks] = useState<Artwork[]>(artworks)
+  const searchParams = useSearchParams()
+
+  // Initialize from URL params
+  const [selectedSeries, setSelectedSeries] = useState(() => {
+    const s = searchParams.get('serie')
+    return s && series.some(x => x.id === s) ? s : 'all'
+  })
+  const [showOnlyAvailable, setShowOnlyAvailable] = useState(() => {
+    return searchParams.get('estado') === 'available'
+  })
   const [hoveredArtwork, setHoveredArtwork] = useState<Artwork | null>(null)
   const [isVisible, setIsVisible] = useState(false)
-  const sectionRef = useRef<HTMLDivElement>(null)
+
+  // Sync filters to URL (without navigation)
+  const updateURL = useCallback((seriesId: string, onlyAvailable: boolean) => {
+    const params = new URLSearchParams()
+    if (seriesId !== 'all') params.set('serie', seriesId)
+    if (onlyAvailable) params.set('estado', 'available')
+    const qs = params.toString()
+    const url = qs ? `/obra?${qs}` : '/obra'
+    window.history.replaceState(null, '', url)
+  }, [])
 
   useEffect(() => {
     const timer = setTimeout(() => setIsVisible(true), 50)
     return () => clearTimeout(timer)
   }, [])
 
-  useEffect(() => {
-    if (selectedSeries === 'all') {
-      setFilteredArtworks(artworks)
-    } else {
-      setFilteredArtworks(
-        artworks.filter(a => a.series.toLowerCase().replace(/\s+/g, '-') === selectedSeries)
-      )
-    }
+  // Artworks filtered by series only (used for contextual status counts)
+  const seriesFiltered = useMemo(() => {
+    if (selectedSeries === 'all') return artworks
+    return artworks.filter(a => a.series.toLowerCase().replace(/\s+/g, '-') === selectedSeries)
   }, [selectedSeries, artworks])
+
+  // Combined filter: series + availability toggle
+  const filteredArtworks = useMemo(() => {
+    if (!showOnlyAvailable) return seriesFiltered
+    return seriesFiltered.filter(a => a.status === 'available')
+  }, [seriesFiltered, showOnlyAvailable])
+
+  // Count available works in current series filter
+  const availableCount = useMemo(() => {
+    return seriesFiltered.filter(a => a.status === 'available').length
+  }, [seriesFiltered])
+
+  function resetFilters() {
+    setSelectedSeries('all')
+    setShowOnlyAvailable(false)
+    updateURL('all', false)
+  }
 
   const content = {
     es: {
       title: 'Catálogo',
       filterLabel: 'Serie',
-      noResults: 'No hay obras en esta serie.',
+      noResults: 'No hay obras con estos filtros.',
+      resetFilters: 'Ver todo el catálogo',
     },
     en: {
       title: 'Catalogue',
       filterLabel: 'Series',
-      noResults: 'No works in this series.',
+      noResults: 'No works match these filters.',
+      resetFilters: 'View full catalogue',
     },
   }
 
@@ -150,7 +291,7 @@ function GalleryContent() {
   let globalIndex = 0
 
   return (
-    <div className="min-h-screen pt-24 sm:pt-28 lg:pt-32" ref={sectionRef}>
+    <div className="min-h-screen pt-24 sm:pt-28 lg:pt-32">
       <div className="container-gallery">
         {/* Header */}
         <header className="mb-10 sm:mb-14">
@@ -167,41 +308,91 @@ function GalleryContent() {
 
         {/* Filters */}
         <div
-          className="relative mb-8 sm:mb-10"
+          className="mb-8 sm:mb-10"
           style={{
             opacity: isVisible ? 1 : 0,
             transition: `opacity var(--motion-slow) var(--ease-out) 100ms`,
           }}
         >
-          <div className="flex items-center gap-3 flex-nowrap sm:flex-wrap overflow-x-auto sm:overflow-visible no-scrollbar">
-            <span className="shrink-0 whitespace-nowrap font-body text-xs tracking-[0.08em] uppercase text-[hsl(var(--foreground-subtle))] mr-2">
-              {t.filterLabel}
-            </span>
-            {series.map((s) => (
-              <button
-                key={s.id}
-                onClick={() => setSelectedSeries(s.id)}
-                className="shrink-0 whitespace-nowrap font-body text-sm py-2 px-3"
+          {/* Series filter */}
+          <div className="relative">
+            <div
+              role="group"
+              aria-label={locale === 'es' ? 'Filtrar por serie' : 'Filter by series'}
+              className="flex items-center gap-3 flex-nowrap sm:flex-wrap overflow-x-auto sm:overflow-visible no-scrollbar"
+            >
+              <span className="shrink-0 whitespace-nowrap font-body text-xs tracking-[0.08em] uppercase text-[hsl(var(--foreground-subtle))] mr-2">
+                {t.filterLabel}
+              </span>
+              {series.map((s) => (
+                <button
+                  key={s.id}
+                  onClick={() => { setSelectedSeries(s.id); updateURL(s.id, showOnlyAvailable) }}
+                  aria-pressed={selectedSeries === s.id}
+                  className="shrink-0 whitespace-nowrap font-body text-sm py-3 px-3"
+                  style={{
+                    color: selectedSeries === s.id
+                      ? 'hsl(var(--foreground))'
+                      : 'hsl(var(--foreground-muted))',
+                    borderBottom: selectedSeries === s.id
+                      ? '1px solid hsl(var(--foreground))'
+                      : '1px solid transparent',
+                    transition: `color var(--motion-fast) var(--ease-out), border-color var(--motion-fast) var(--ease-out)`,
+                  }}
+                >
+                  {locale === 'es' ? s.name : s.nameEn}
+                </button>
+              ))}
+            </div>
+            {/* Fade hint — indicates scrollability on mobile */}
+            <div className="absolute right-0 top-0 bottom-0 w-8 bg-gradient-to-l from-[hsl(var(--background))] to-transparent pointer-events-none sm:hidden" />
+          </div>
+
+          {/* Availability toggle */}
+          <div className="flex items-center mt-4 sm:mt-5">
+            <button
+              role="switch"
+              aria-checked={showOnlyAvailable}
+              aria-label={locale === 'es' ? 'Mostrar solo obras disponibles' : 'Show only available works'}
+              onClick={() => { const next = !showOnlyAvailable; setShowOnlyAvailable(next); updateURL(selectedSeries, next) }}
+              className="flex items-center gap-3 group/toggle py-1"
+            >
+              {/* Track — geometric, not pill-shaped */}
+              <span
+                className="relative w-10 h-[22px] rounded-sm"
                 style={{
-                  color: selectedSeries === s.id
-                    ? 'hsl(var(--foreground))'
-                    : 'hsl(var(--foreground-muted))',
-                  borderBottom: selectedSeries === s.id
-                    ? '1px solid hsl(var(--foreground))'
-                    : '1px solid transparent',
-                  transition: `color var(--motion-fast) var(--ease-out), border-color var(--motion-fast) var(--ease-out)`,
+                  border: `1px solid ${showOnlyAvailable ? 'hsl(var(--accent))' : 'hsl(var(--border-strong, var(--border)))'}`,
+                  backgroundColor: showOnlyAvailable ? 'hsl(var(--accent) / 0.08)' : 'transparent',
+                  transition: 'border-color var(--motion-normal) var(--ease-out), background-color var(--motion-normal) var(--ease-out)',
                 }}
               >
-                {locale === 'es' ? s.name : s.nameEn}
-              </button>
-            ))}
+                {/* Diamond knob */}
+                <span
+                  className="absolute top-1/2 -translate-y-1/2 w-3 h-3 rotate-45"
+                  style={{
+                    left: showOnlyAvailable ? 'calc(100% - 16px)' : '3px',
+                    backgroundColor: showOnlyAvailable ? 'hsl(var(--accent))' : 'hsl(var(--foreground-subtle))',
+                    transition: 'left var(--motion-normal) var(--ease-out), background-color var(--motion-normal) var(--ease-out)',
+                  }}
+                />
+              </span>
+
+              <span
+                className="font-body text-sm"
+                style={{
+                  color: showOnlyAvailable ? 'hsl(var(--accent))' : 'hsl(var(--foreground-muted))',
+                  transition: 'color var(--motion-fast) var(--ease-out)',
+                }}
+              >
+                {locale === 'es' ? 'Solo disponibles' : 'Available only'}
+                <span className="ml-1.5 text-xs opacity-50">{availableCount}</span>
+              </span>
+            </button>
           </div>
-          {/* Fade hint — indicates scrollability on mobile */}
-          <div className="absolute right-0 top-0 bottom-0 w-8 bg-gradient-to-l from-[hsl(var(--background))] to-transparent pointer-events-none sm:hidden" />
         </div>
 
-        {/* Content grid */}
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-12 pb-16 sm:pb-24">
+        {/* ─── Desktop: work list + hover preview (original layout) ─── */}
+        <div className="hidden lg:grid lg:grid-cols-12 gap-8 lg:gap-12 pb-16 sm:pb-24">
           {/* Work list */}
           <div className="lg:col-span-7">
             {groupedArtworks.length > 0 ? (
@@ -232,10 +423,17 @@ function GalleryContent() {
                 </div>
               ))
             ) : (
-              <div className="py-12 text-center">
+              <div className="py-12 text-center space-y-4">
                 <p className="font-body text-sm text-[hsl(var(--foreground-muted))]">
                   {t.noResults}
                 </p>
+                <button
+                  onClick={resetFilters}
+                  className="font-body text-sm text-[hsl(var(--accent))] hover:text-[hsl(var(--foreground))]"
+                  style={{ transition: `color var(--motion-fast) var(--ease-out)` }}
+                >
+                  {t.resetFilters}
+                </button>
               </div>
             )}
           </div>
@@ -276,6 +474,38 @@ function GalleryContent() {
             </div>
           </div>
         </div>
+
+        {/* ─── Tablet & Mobile: image card grid ─── */}
+        <div className="lg:hidden pb-16 sm:pb-24">
+          {filteredArtworks.length > 0 ? (
+            <div
+              className="grid grid-cols-2 sm:grid-cols-6 gap-3 sm:gap-4"
+              style={{ gridAutoFlow: 'dense' }}
+            >
+              {filteredArtworks.map((artwork, index) => (
+                <ArtworkCard
+                  key={artwork.id}
+                  artwork={artwork}
+                  locale={locale}
+                  index={index}
+                />
+              ))}
+            </div>
+          ) : (
+            <div className="py-12 text-center space-y-4">
+              <p className="font-body text-sm text-[hsl(var(--foreground-muted))]">
+                {t.noResults}
+              </p>
+              <button
+                onClick={resetFilters}
+                className="font-body text-sm text-[hsl(var(--accent))] hover:text-[hsl(var(--foreground))]"
+                style={{ transition: `color var(--motion-fast) var(--ease-out)` }}
+              >
+                {t.resetFilters}
+              </button>
+            </div>
+          )}
+        </div>
       </div>
     </div>
   )
@@ -284,7 +514,9 @@ function GalleryContent() {
 export default function GalleryPage() {
   return (
     <MainLayout>
-      <GalleryContent />
+      <Suspense>
+        <GalleryContent />
+      </Suspense>
     </MainLayout>
   )
 }
