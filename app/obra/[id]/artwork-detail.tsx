@@ -241,22 +241,6 @@ function DesktopZoomViewer({
     >
       <div className="absolute inset-0 bg-black" />
 
-      {/* Top bar — switches between contemplative hint and zoom hint */}
-      <div
-        className="absolute top-0 left-0 right-0 z-10 flex items-center justify-between py-5 px-8"
-        style={{
-          opacity: contemplative ? 0 : 1,
-          transition: 'opacity 600ms var(--ease-out)',
-          pointerEvents: contemplative ? 'none' : 'auto',
-        }}
-      >
-        <p className="font-body text-xs text-white/50">
-          {scale > 1
-            ? (locale === 'es' ? 'Arrastra para explorar' : 'Drag to explore')
-            : (locale === 'es' ? 'Clic para ampliar' : 'Click to zoom in')}
-        </p>
-      </div>
-
       {/* Close button — appears after 1s, always focusable for a11y */}
       <button
         onClick={onClose}
@@ -272,19 +256,19 @@ function DesktopZoomViewer({
         </svg>
       </button>
 
-      {/* Contemplative info — title + year, bottom-left */}
+      {/* Title + year — always visible once faded in */}
       <div
         className="absolute bottom-8 left-8 z-10 pointer-events-none"
         style={{
-          opacity: (showInfo && contemplative) ? 0.4 : 0,
+          opacity: showClose ? (contemplative ? 0.4 : 0.3) : 0,
           transition: 'opacity 800ms var(--ease-out)',
         }}
       >
-        <p className="font-display text-lg text-white">{title}</p>
+        <p className="font-display text-2xl text-white">{title}</p>
         <p className="font-body text-xs text-white/60 mt-1">{year}</p>
       </div>
 
-      {/* Contemplative hint — center bottom */}
+      {/* Contemplative hint — center bottom, only in contemplative mode */}
       <div
         className="absolute bottom-8 left-1/2 -translate-x-1/2 z-10 pointer-events-none"
         style={{
@@ -295,25 +279,6 @@ function DesktopZoomViewer({
         <p className="font-body text-xs text-white/50">
           {locale === 'es' ? 'Contempla la obra · Clic para ampliar' : 'Contemplate the work · Click to zoom'}
         </p>
-      </div>
-
-      {/* Zoom controls — only when not contemplative */}
-      <div
-        className="absolute bottom-6 left-1/2 -translate-x-1/2 z-10 flex items-center gap-3"
-        style={{
-          opacity: contemplative ? 0 : 1,
-          transition: 'opacity 400ms var(--ease-out)',
-          pointerEvents: contemplative ? 'none' : 'auto',
-        }}
-      >
-        <button onClick={() => { setScale(1); setPosition({ x: 0, y: 0 }) }}
-          className={`font-body text-xs py-1 px-2 ${scale <= 1 ? 'text-white' : 'text-white/40'}`}>1x</button>
-        <div className="w-20 h-px bg-white/20 relative">
-          <div className="absolute top-1/2 -translate-y-1/2 w-2 h-2 bg-[hsl(var(--accent))]"
-            style={{ left: `${((scale - 1) / 4) * 100}%`, transition: isDragging ? 'none' : 'left 150ms var(--ease-out)' }} />
-        </div>
-        <button onClick={() => { enterZoomMode(); setScale(5) }}
-          className={`font-body text-xs py-1 px-2 ${scale >= 5 ? 'text-white' : 'text-white/40'}`}>5x</button>
       </div>
 
       <div ref={containerRef}
@@ -599,15 +564,15 @@ function MobileZoomViewer({
         </div>
       </button>
 
-      {/* Contemplative info — title + year, bottom-left */}
+      {/* Title + year — always visible once faded in */}
       <div
         className="absolute bottom-8 left-6 z-20 pointer-events-none"
         style={{
-          opacity: (showInfo && contemplative) ? 0.4 : 0,
+          opacity: showClose ? (contemplative ? 0.4 : 0.3) : 0,
           transition: 'opacity 800ms var(--ease-out)',
         }}
       >
-        <p className="font-display text-base text-white">{title}</p>
+        <p className="font-display text-xl text-white">{title}</p>
         <p className="font-body text-xs text-white/60 mt-1">{year}</p>
       </div>
 
@@ -780,7 +745,7 @@ function InquiryModal({
       <div className="relative bg-[hsl(var(--card))] border border-[hsl(var(--border))] p-6 sm:p-8 max-w-md w-full">
         <button
           onClick={onClose}
-          className="absolute top-4 right-4 w-8 h-8 flex items-center justify-center text-[hsl(var(--foreground-muted))] hover:text-[hsl(var(--foreground))]"
+          className="absolute top-3 right-3 w-11 h-11 flex items-center justify-center text-[hsl(var(--foreground-muted))] hover:text-[hsl(var(--foreground))] cursor-pointer"
           style={{ transition: `color var(--motion-fast) var(--ease-out)` }}
           aria-label={t.close}
         >
@@ -1073,7 +1038,7 @@ export default function ArtworkDetailContent({ artwork }: { artwork: Artwork }) 
           className="mb-14 sm:mb-20"
           style={{
             opacity: isVisible ? 1 : 0,
-            transition: 'opacity 0.8s var(--ease-out) 200ms',
+            transition: 'opacity var(--motion-reveal) var(--ease-out) 200ms',
           }}
         >
           <button

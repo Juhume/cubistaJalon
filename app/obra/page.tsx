@@ -145,7 +145,7 @@ function ArtworkCard({
         ...gridStyle,
         opacity: visible ? 1 : 0,
         transform: visible ? 'translateY(0)' : 'translateY(12px)',
-        transition: `opacity 0.5s var(--ease-out) ${Math.min(index * 40, 300)}ms, transform 0.6s var(--ease-out) ${Math.min(index * 40, 300)}ms`,
+        transition: `opacity var(--motion-reveal) var(--ease-out) ${Math.min(index * 40, 300)}ms, transform var(--motion-reveal) var(--ease-out) ${Math.min(index * 40, 300)}ms`,
       }}
     >
       {/* Image with crop-marks */}
@@ -156,7 +156,7 @@ function ArtworkCard({
             alt={locale === 'es' ? artwork.title : artwork.titleEn}
             fill
             className="object-cover transition-transform group-hover:scale-[1.02]"
-            style={{ transitionDuration: '0.8s', transitionTimingFunction: 'var(--ease-out)' }}
+            style={{ transitionDuration: 'var(--motion-reveal)', transitionTimingFunction: 'var(--ease-out)' }}
             sizes="(max-width: 640px) 50vw, 33vw"
           />
         </div>
@@ -224,6 +224,7 @@ function GalleryContent() {
   // Artworks filtered by series only (used for contextual status counts)
   const seriesFiltered = useMemo(() => {
     if (selectedSeries === 'all') return artworks
+    if (selectedSeries === 'sin-serie') return artworks.filter(a => !a.series)
     return artworks.filter(a => (a.series || '').toLowerCase().replace(/\s+/g, '-') === selectedSeries)
   }, [selectedSeries, artworks])
 
@@ -288,12 +289,12 @@ function GalleryContent() {
     <div className="min-h-screen pt-24 sm:pt-28 lg:pt-32">
       <div className="container-gallery">
         {/* Header */}
-        <header className="mb-10 sm:mb-14">
+        <header className="mb-12 sm:mb-16">
           <h1
             className="font-display text-3xl sm:text-4xl md:text-5xl text-[hsl(var(--foreground))] leading-[1.1]"
             style={{
               opacity: isVisible ? 1 : 0,
-              transition: `opacity 0.8s var(--ease-out)`,
+              transition: `opacity var(--motion-reveal) var(--ease-out)`,
             }}
           >
             {t.title}
@@ -323,7 +324,7 @@ function GalleryContent() {
                   key={s.id}
                   onClick={() => { setSelectedSeries(s.id); updateURL(s.id, showOnlyAvailable) }}
                   aria-pressed={selectedSeries === s.id}
-                  className="shrink-0 whitespace-nowrap font-body text-sm py-3 px-3"
+                  className="shrink-0 whitespace-nowrap font-body text-sm py-3 px-3 cursor-pointer"
                   style={{
                     color: selectedSeries === s.id
                       ? 'hsl(var(--foreground))'
@@ -349,11 +350,11 @@ function GalleryContent() {
               aria-checked={showOnlyAvailable}
               aria-label={locale === 'es' ? 'Mostrar solo obras disponibles' : 'Show only available works'}
               onClick={() => { const next = !showOnlyAvailable; setShowOnlyAvailable(next); updateURL(selectedSeries, next) }}
-              className="flex items-center gap-3 group/toggle py-1"
+              className="flex items-center gap-3 group/toggle py-2 cursor-pointer"
             >
               {/* Track — geometric, not pill-shaped */}
               <span
-                className="relative w-10 h-[22px] rounded-sm"
+                className="relative w-12 h-6 rounded-sm"
                 style={{
                   border: `1px solid ${showOnlyAvailable ? 'hsl(var(--accent))' : 'hsl(var(--border-strong, var(--border)))'}`,
                   backgroundColor: showOnlyAvailable ? 'hsl(var(--accent) / 0.08)' : 'transparent',
@@ -362,9 +363,9 @@ function GalleryContent() {
               >
                 {/* Diamond knob */}
                 <span
-                  className="absolute top-1/2 -translate-y-1/2 w-3 h-3 rotate-45"
+                  className="absolute top-1/2 -translate-y-1/2 w-3.5 h-3.5 rotate-45"
                   style={{
-                    left: showOnlyAvailable ? 'calc(100% - 16px)' : '3px',
+                    left: showOnlyAvailable ? 'calc(100% - 18px)' : '3px',
                     backgroundColor: showOnlyAvailable ? 'hsl(var(--accent))' : 'hsl(var(--foreground-subtle))',
                     transition: 'left var(--motion-normal) var(--ease-out), background-color var(--motion-normal) var(--ease-out)',
                   }}
@@ -423,7 +424,7 @@ function GalleryContent() {
                 </p>
                 <button
                   onClick={resetFilters}
-                  className="font-body text-sm text-[hsl(var(--accent))] hover:text-[hsl(var(--foreground))]"
+                  className="font-body text-sm text-[hsl(var(--accent))] hover:text-[hsl(var(--foreground))] cursor-pointer"
                   style={{ transition: `color var(--motion-fast) var(--ease-out)` }}
                 >
                   {t.resetFilters}
@@ -452,7 +453,7 @@ function GalleryContent() {
               ) : filteredArtworks[0] ? (
                 <Image
                   src={filteredArtworks[0].imageUrl}
-                  alt=""
+                  alt={locale === 'es' ? filteredArtworks[0].title : filteredArtworks[0].titleEn}
                   fill
                   className="object-cover"
                   sizes="40vw"
@@ -492,7 +493,7 @@ function GalleryContent() {
               </p>
               <button
                 onClick={resetFilters}
-                className="font-body text-sm text-[hsl(var(--accent))] hover:text-[hsl(var(--foreground))]"
+                className="font-body text-sm text-[hsl(var(--accent))] hover:text-[hsl(var(--foreground))] cursor-pointer"
                 style={{ transition: `color var(--motion-fast) var(--ease-out)` }}
               >
                 {t.resetFilters}

@@ -68,6 +68,16 @@ function Header({ locale, onLocaleChange }: { locale: Locale; onLocaleChange: (l
     return () => { document.body.style.overflow = '' }
   }, [isMobileMenuOpen])
 
+  // Close mobile menu if viewport crosses lg breakpoint (prevents stuck scroll lock)
+  useEffect(() => {
+    const lgMq = window.matchMedia('(min-width: 1024px)')
+    const handler = (e: MediaQueryListEvent) => {
+      if (e.matches && isMobileMenuOpen) setIsMobileMenuOpen(false)
+    }
+    lgMq.addEventListener('change', handler)
+    return () => lgMq.removeEventListener('change', handler)
+  }, [isMobileMenuOpen])
+
   // Color scheme: light text when over the dark hero, dark text otherwise
   const useLightText = isOverDark && !isScrolled && !isMobileMenuOpen
   const textPrimary = useLightText ? 'hsl(var(--foreground-light))' : 'hsl(var(--foreground))'
@@ -141,7 +151,7 @@ function Header({ locale, onLocaleChange }: { locale: Locale; onLocaleChange: (l
               <div className="hidden sm:flex items-center font-body text-sm">
                 <button
                   onClick={() => onLocaleChange('es')}
-                  className="px-2.5 py-2"
+                  className="px-2.5 py-2 cursor-pointer"
                   style={{
                     color: locale === 'es' ? textPrimary : textSecondary,
                     transition: `color var(--motion-normal) var(--ease-out)`,
@@ -152,7 +162,7 @@ function Header({ locale, onLocaleChange }: { locale: Locale; onLocaleChange: (l
                 <span style={{ color: textDivider, transition: `color var(--motion-normal) var(--ease-out)` }}>/</span>
                 <button
                   onClick={() => onLocaleChange('en')}
-                  className="px-2.5 py-2"
+                  className="px-2.5 py-2 cursor-pointer"
                   style={{
                     color: locale === 'en' ? textPrimary : textSecondary,
                     transition: `color var(--motion-normal) var(--ease-out)`,
@@ -276,7 +286,7 @@ function Header({ locale, onLocaleChange }: { locale: Locale; onLocaleChange: (l
           <div className="flex items-center gap-3 mt-8 pt-6 border-t border-[hsl(var(--border))]">
             <button
               onClick={() => onLocaleChange('es')}
-              className="font-body text-base py-1 px-1"
+              className="font-body text-base py-1 px-1 cursor-pointer"
               style={{
                 color: locale === 'es' ? 'hsl(var(--foreground))' : 'hsl(var(--foreground-muted))',
                 transition: 'color var(--motion-fast) var(--ease-out)',
@@ -287,7 +297,7 @@ function Header({ locale, onLocaleChange }: { locale: Locale; onLocaleChange: (l
             <span className="text-[hsl(var(--border-strong))]">/</span>
             <button
               onClick={() => onLocaleChange('en')}
-              className="font-body text-base py-1 px-1"
+              className="font-body text-base py-1 px-1 cursor-pointer"
               style={{
                 color: locale === 'en' ? 'hsl(var(--foreground))' : 'hsl(var(--foreground-muted))',
                 transition: 'color var(--motion-fast) var(--ease-out)',
@@ -459,14 +469,14 @@ function PageTransition({ children }: { children: React.ReactNode }) {
           opacity: 0,
           transform: 'translateY(6px)',
           willChange: 'opacity, transform',
-          transition: 'opacity 180ms cubic-bezier(0.4, 0, 1, 1), transform 180ms cubic-bezier(0.4, 0, 1, 1)',
+          transition: 'opacity 180ms var(--ease-smooth), transform 180ms var(--ease-smooth)',
         }
       : phase === 'in'
       ? {
           opacity: 1,
           transform: 'translateY(0)',
           willChange: 'opacity, transform',
-          transition: 'opacity 420ms cubic-bezier(0, 0, 0.2, 1), transform 420ms cubic-bezier(0, 0, 0.2, 1)',
+          transition: 'opacity 420ms var(--ease-out), transform 420ms var(--ease-out)',
         }
       : { opacity: 1, transform: 'none' }
 
@@ -475,13 +485,13 @@ function PageTransition({ children }: { children: React.ReactNode }) {
     phase === 'out'
       ? {
           transform: 'scaleX(1)',
-          transition: 'transform 180ms cubic-bezier(0.4, 0, 0.2, 1)',
+          transition: 'transform 180ms var(--ease-smooth)',
         }
       : phase === 'in'
       ? {
           transform: 'scaleX(0)',
           transformOrigin: 'right',
-          transition: 'transform 350ms cubic-bezier(0.4, 0, 0.2, 1) 100ms',
+          transition: 'transform 350ms var(--ease-smooth) 100ms',
         }
       : { transform: 'scaleX(0)' }
 
@@ -582,6 +592,20 @@ export function MainLayout({ children }: MainLayoutProps) {
   useEffect(() => {
     document.documentElement.lang = locale
   }, [locale])
+
+  // Image reveal — mark images as loaded for CSS fade-in
+  useEffect(() => {
+    const markLoaded = (e: Event) => {
+      if (e.target instanceof HTMLImageElement && e.target.dataset.nimg !== undefined) {
+        e.target.classList.add('img-loaded')
+      }
+    }
+    document.addEventListener('load', markLoaded, true)
+    document.querySelectorAll<HTMLImageElement>('img[data-nimg]').forEach(img => {
+      if (img.complete) img.classList.add('img-loaded')
+    })
+    return () => document.removeEventListener('load', markLoaded, true)
+  }, [])
 
   // Persist manual locale changes
   const setLocale = useMemo(() => (l: Locale) => {

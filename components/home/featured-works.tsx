@@ -50,7 +50,7 @@ function HeroPiece({
       style={{
         opacity: visible ? 1 : 0,
         transform: visible ? 'none' : 'translateY(20px)',
-        transition: 'opacity 0.8s var(--ease-out), transform 0.9s var(--ease-out)',
+        transition: 'opacity var(--motion-reveal) var(--ease-out), transform var(--motion-reveal) var(--ease-out)',
       }}
     >
       {/* Image — cinematic landscape, crop marks, max 10 columns */}
@@ -62,7 +62,7 @@ function HeroPiece({
               alt={title}
               fill
               className="object-cover transition-transform group-hover:scale-[1.02]"
-              style={{ transitionDuration: '1.2s', transitionTimingFunction: 'var(--ease-out)' }}
+              style={{ transitionDuration: 'var(--motion-reveal)', transitionTimingFunction: 'var(--ease-out)' }}
               sizes="(max-width: 1024px) 100vw, 85vw"
               priority
             />
@@ -149,7 +149,7 @@ function PairedWorks({
       style={{
         opacity: visible ? 1 : 0,
         transform: visible ? 'none' : 'translateY(20px)',
-        transition: 'opacity 0.7s var(--ease-out), transform 0.8s var(--ease-out)',
+        transition: 'opacity var(--motion-reveal) var(--ease-out), transform var(--motion-reveal) var(--ease-out)',
       }}
     >
       <PairedWorkCard artwork={left} locale={locale} index={startIndex} visible={visible} delay={0} />
@@ -184,7 +184,7 @@ function PairedWorkCard({
       style={{
         opacity: visible ? 1 : 0,
         transform: visible ? 'none' : 'translateY(12px)',
-        transition: `opacity 0.6s var(--ease-out) ${delay}ms, transform 0.7s var(--ease-out) ${delay}ms`,
+        transition: `opacity var(--motion-reveal) var(--ease-out) ${delay}ms, transform var(--motion-reveal) var(--ease-out) ${delay}ms`,
       }}
     >
       {/* Image — consistent portrait aspect, no crop marks */}
@@ -194,7 +194,7 @@ function PairedWorkCard({
           alt={title}
           fill
           className="object-cover transition-transform group-hover:scale-[1.03]"
-          style={{ transitionDuration: '0.8s', transitionTimingFunction: 'var(--ease-out)' }}
+          style={{ transitionDuration: 'var(--motion-reveal)', transitionTimingFunction: 'var(--ease-out)' }}
           sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 42vw"
         />
       </div>
@@ -330,7 +330,7 @@ export function FeaturedWorks({ locale }: FeaturedWorksProps) {
         style={{
           opacity: ctaVisible ? 1 : 0,
           transform: ctaVisible ? 'none' : 'translateY(12px)',
-          transition: 'opacity 0.7s var(--ease-out), transform 0.8s var(--ease-out)',
+          transition: 'opacity var(--motion-reveal) var(--ease-out), transform var(--motion-reveal) var(--ease-out)',
         }}
       >
         <Link
@@ -340,7 +340,7 @@ export function FeaturedWorks({ locale }: FeaturedWorksProps) {
           {/* Siena accent line — top edge, expands on hover */}
           <div
             className="absolute top-0 left-0 h-[2px] bg-[hsl(var(--accent))] w-16 group-hover/cta:w-full"
-            style={{ transition: 'width 0.6s var(--ease-smooth)' }}
+            style={{ transition: 'width var(--motion-reveal) var(--ease-smooth)' }}
           />
 
           {/* Bottom edge — subtle separator from Quote section */}

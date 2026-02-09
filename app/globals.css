@@ -6,24 +6,20 @@
   :root {
     /* Surfaces */
     --background: 40 14% 96%;
-    --background-alt: 36 10% 91%;
     --background-dark: 225 20% 7%;
     --foreground-light: 40 10% 92%;
-    --foreground-light-muted: 36 5% 52%;
+    --foreground-light-muted: 36 5% 62%;
 
     /* Ink — 3 levels only */
     --foreground: 220 14% 11%;
-    --foreground-muted: 218 8% 34%;
-    --foreground-subtle: 216 6% 42%;
+    --foreground-muted: 218 8% 30%;
+    --foreground-subtle: 216 6% 36%;
 
     /* Siena tostada */
     --accent: 14 68% 40%;
-    --accent-light: 16 55% 52%;
-    --accent-dark: 12 72% 30%;
 
     /* Ultramarino */
     --ultra: 228 64% 28%;
-    --ultra-light: 228 48% 40%;
 
     /* UI */
     --border: 36 8% 84%;
@@ -47,10 +43,11 @@
     --accent-foreground: 40 14% 96%;
     --input: 36 8% 84%;
 
-    /* Motion — 3 speeds */
+    /* Motion — 4 speeds */
     --motion-fast: 120ms;
     --motion-normal: 280ms;
     --motion-slow: 500ms;
+    --motion-reveal: 700ms;
     --ease-out: cubic-bezier(0.16, 1, 0.3, 1);
     --ease-smooth: cubic-bezier(0.65, 0, 0.35, 1);
   }
@@ -142,6 +139,15 @@
 .animate-drift-up {
   animation: driftUp var(--motion-slow) var(--ease-out) forwards;
   opacity: 0;
+}
+
+/* Image reveal — smooth transition from placeholder to loaded */
+img[data-nimg] {
+  opacity: 0;
+}
+
+img[data-nimg].img-loaded {
+  animation: fadeIn var(--motion-slow) var(--ease-out) both;
 }
 
 /* Links */

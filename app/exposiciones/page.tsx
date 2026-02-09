@@ -60,7 +60,7 @@ function ExhibitionsContent() {
           style={{
             opacity: isVisible ? 1 : 0,
             transform: isVisible ? 'translateY(0)' : 'translateY(16px)',
-            transition: 'opacity 0.6s var(--ease-out), transform 0.7s var(--ease-out)',
+            transition: 'opacity var(--motion-reveal) var(--ease-out), transform var(--motion-reveal) var(--ease-out)',
           }}
         >
           {t.title}
@@ -73,7 +73,7 @@ function ExhibitionsContent() {
           className="container-gallery mb-16 sm:mb-24"
           style={{
             opacity: isVisible ? 1 : 0,
-            transition: `opacity 0.8s var(--ease-out) 100ms`,
+            transition: `opacity var(--motion-reveal) var(--ease-out) 100ms`,
           }}
         >
           <div className="grid grid-cols-1 md:grid-cols-12 gap-0 border-t border-[hsl(var(--foreground))]">
@@ -150,7 +150,7 @@ function ExhibitionsContent() {
                       alt=""
                       fill
                       className="object-cover transition-transform group-hover:scale-105"
-                      style={{ transitionDuration: '0.6s', transitionTimingFunction: 'var(--ease-out)' }}
+                      style={{ transitionDuration: 'var(--motion-reveal)', transitionTimingFunction: 'var(--ease-out)' }}
                       sizes="64px"
                     />
                   </div>

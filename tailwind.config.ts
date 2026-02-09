@@ -19,10 +19,7 @@ const config: Config = {
         foreground: 'hsl(var(--foreground))',
         'foreground-muted': 'hsl(var(--foreground-muted))',
         siena: 'hsl(var(--accent))',
-        'siena-light': 'hsl(var(--accent-light))',
-        'siena-dark': 'hsl(var(--accent-dark))',
         ultra: 'hsl(var(--ultra))',
-        'ultra-light': 'hsl(var(--ultra-light))',
         card: {
           DEFAULT: 'hsl(var(--card))',
           foreground: 'hsl(var(--card-foreground))',
@@ -59,20 +56,6 @@ const config: Config = {
         lg: 'var(--radius)',
         md: 'calc(var(--radius) - 2px)',
         sm: 'calc(var(--radius) - 4px)',
-      },
-      animation: {
-        'fade-in': 'fadeIn 0.6s ease-out forwards',
-        'drift-up': 'driftUp 0.5s cubic-bezier(0.22, 1, 0.36, 1) forwards',
-      },
-      keyframes: {
-        fadeIn: {
-          from: { opacity: '0' },
-          to: { opacity: '1' },
-        },
-        driftUp: {
-          from: { opacity: '0', transform: 'translateY(20px)' },
-          to: { opacity: '1', transform: 'translateY(0)' },
-        },
       },
     },
   },

@@ -67,7 +67,7 @@ export function ExhibitionBanner({ locale }: ExhibitionBannerProps) {
             style={{
               opacity: isVisible ? 1 : 0,
               transform: isVisible ? 'translate(0, 0)' : imageHidden,
-              transition: 'opacity 0.7s var(--ease-out) 150ms, transform 0.7s var(--ease-out) 150ms',
+              transition: 'opacity var(--motion-reveal) var(--ease-out) 150ms, transform var(--motion-reveal) var(--ease-out) 150ms',
             }}
           >
             <div className="relative crop-marks">
@@ -89,7 +89,7 @@ export function ExhibitionBanner({ locale }: ExhibitionBannerProps) {
                 opacity: isVisible ? 0.6 : 0,
                 transform: isVisible ? 'scaleX(1)' : 'scaleX(0)',
                 transformOrigin: 'left',
-                transition: 'transform 0.8s var(--ease-smooth) 400ms, opacity 0.6s var(--ease-out) 400ms',
+                transition: 'transform var(--motion-reveal) var(--ease-smooth) 400ms, opacity var(--motion-reveal) var(--ease-out) 400ms',
               }}
             />
           </div>
@@ -100,7 +100,7 @@ export function ExhibitionBanner({ locale }: ExhibitionBannerProps) {
             style={{
               opacity: isVisible ? 1 : 0,
               transform: isVisible ? 'translate(0, 0)' : textHidden,
-              transition: 'opacity 0.6s var(--ease-out), transform 0.7s var(--ease-out)',
+              transition: 'opacity var(--motion-reveal) var(--ease-out), transform var(--motion-reveal) var(--ease-out)',
             }}
           >
             <p className="font-annotation text-sm text-[hsl(var(--accent))] mb-5">
@@ -146,7 +146,7 @@ export function ExhibitionBanner({ locale }: ExhibitionBannerProps) {
             opacity: isVisible ? 0.4 : 0,
             transform: isVisible ? 'scaleX(1)' : 'scaleX(0)',
             transformOrigin: 'left',
-            transition: 'transform 0.8s var(--ease-smooth) 500ms, opacity 0.6s var(--ease-out) 500ms',
+            transition: 'transform var(--motion-reveal) var(--ease-smooth) 500ms, opacity var(--motion-reveal) var(--ease-out) 500ms',
           }}
         />
       </div>

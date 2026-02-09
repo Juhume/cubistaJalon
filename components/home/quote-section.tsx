@@ -29,7 +29,7 @@ export function QuoteSection({ locale }: QuoteSectionProps) {
                 opacity: isVisible ? 1 : 0,
                 transform: isVisible ? 'scaleY(1)' : 'scaleY(0)',
                 transformOrigin: 'top',
-                transition: 'transform 0.8s var(--ease-smooth), opacity 0.6s var(--ease-out)',
+                transition: 'transform var(--motion-reveal) var(--ease-smooth), opacity var(--motion-reveal) var(--ease-out)',
               }}
             />
           </div>
@@ -41,7 +41,7 @@ export function QuoteSection({ locale }: QuoteSectionProps) {
               opacity: isVisible ? 1 : 0,
               transform: isVisible ? 'scaleX(1)' : 'scaleX(0)',
               transformOrigin: 'left',
-              transition: 'transform 0.8s var(--ease-smooth), opacity 0.6s var(--ease-out)',
+              transition: 'transform var(--motion-reveal) var(--ease-smooth), opacity var(--motion-reveal) var(--ease-out)',
             }}
           />
 
@@ -68,7 +68,7 @@ export function QuoteSection({ locale }: QuoteSectionProps) {
                   fontStyle: 'italic',
                   opacity: isVisible ? 1 : 0,
                   transform: isVisible ? 'translateY(0)' : 'translateY(12px)',
-                  transition: 'opacity 0.7s var(--ease-out) 150ms, transform 0.7s var(--ease-out) 150ms',
+                  transition: 'opacity var(--motion-reveal) var(--ease-out) 150ms, transform var(--motion-reveal) var(--ease-out) 150ms',
                 }}
               >
                 {quote}
@@ -81,7 +81,7 @@ export function QuoteSection({ locale }: QuoteSectionProps) {
               style={{
                 opacity: isVisible ? 1 : 0,
                 transform: isVisible ? 'translateY(0)' : 'translateY(6px)',
-                transition: 'opacity 0.5s var(--ease-out) 400ms, transform 0.5s var(--ease-out) 400ms',
+                transition: 'opacity var(--motion-slow) var(--ease-out) 400ms, transform var(--motion-slow) var(--ease-out) 400ms',
               }}
             >
               <span className="w-10 h-px bg-[hsl(var(--accent))]" />

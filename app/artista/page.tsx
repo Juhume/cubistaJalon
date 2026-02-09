@@ -41,7 +41,7 @@ function ArtistContent() {
             style={{
               opacity: isVisible ? 1 : 0,
               transform: isVisible ? 'translateY(0)' : 'translateY(16px)',
-              transition: 'opacity 0.6s var(--ease-out), transform 0.7s var(--ease-out)',
+              transition: 'opacity var(--motion-reveal) var(--ease-out), transform var(--motion-reveal) var(--ease-out)',
             }}
           >
             <p className="font-annotation text-sm text-[hsl(var(--foreground-muted))] mb-4">
@@ -71,7 +71,7 @@ function ArtistContent() {
             className="relative overflow-hidden"
             style={{
               opacity: isVisible ? 1 : 0,
-              transition: `opacity 0.8s var(--ease-out) 200ms`,
+              transition: `opacity var(--motion-reveal) var(--ease-out) 200ms`,
             }}
           >
             {/* Second copy — offset, reduced opacity, sepia */}

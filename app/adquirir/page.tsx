@@ -117,7 +117,7 @@ function AcquisitionContent() {
           style={{
             opacity: isVisible ? 1 : 0,
             transform: isVisible ? 'translateY(0)' : 'translateY(16px)',
-            transition: 'opacity 0.6s var(--ease-out), transform 0.7s var(--ease-out)',
+            transition: 'opacity var(--motion-reveal) var(--ease-out), transform var(--motion-reveal) var(--ease-out)',
           }}
         >
           <h1 className="font-display text-3xl sm:text-4xl md:text-5xl text-[hsl(var(--foreground))] leading-[1.1] mb-6">
@@ -184,8 +184,10 @@ function AcquisitionContent() {
                       value={formData.name}
                       onChange={(e) => { setFormData({ ...formData, name: e.target.value }); setErrors(prev => ({ ...prev, name: '' })) }}
                       className={`input-field ${errors.name ? 'border-[hsl(var(--accent))]' : ''}`}
+                      aria-describedby={errors.name ? 'field-name-error' : undefined}
+                      aria-invalid={!!errors.name}
                     />
-                    {errors.name && <p className="font-body text-xs text-[hsl(var(--accent))] mt-1">{errors.name}</p>}
+                    {errors.name && <p id="field-name-error" role="alert" className="font-body text-xs text-[hsl(var(--accent))] mt-1">{errors.name}</p>}
                   </div>
                   <div>
                     <label htmlFor="field-email" className="input-label">{t.email} *</label>
@@ -197,8 +199,10 @@ function AcquisitionContent() {
                       value={formData.email}
                       onChange={(e) => { setFormData({ ...formData, email: e.target.value }); setErrors(prev => ({ ...prev, email: '' })) }}
                       className={`input-field ${errors.email ? 'border-[hsl(var(--accent))]' : ''}`}
+                      aria-describedby={errors.email ? 'field-email-error' : undefined}
+                      aria-invalid={!!errors.email}
                     />
-                    {errors.email && <p className="font-body text-xs text-[hsl(var(--accent))] mt-1">{errors.email}</p>}
+                    {errors.email && <p id="field-email-error" role="alert" className="font-body text-xs text-[hsl(var(--accent))] mt-1">{errors.email}</p>}
                   </div>
                 </div>
 
@@ -247,7 +251,7 @@ function AcquisitionContent() {
                 <button
                   type="submit"
                   disabled={isSubmitted}
-                  className="w-full py-3 bg-[hsl(var(--foreground))] text-[hsl(var(--background))] font-body text-sm hover:bg-[hsl(var(--accent))] disabled:opacity-50"
+                  className="w-full py-3 bg-[hsl(var(--foreground))] text-[hsl(var(--background))] font-body text-sm hover:bg-[hsl(var(--accent))] disabled:opacity-50 cursor-pointer disabled:cursor-not-allowed"
                   style={{ transition: `background-color var(--motion-normal) var(--ease-out)` }}
                 >
                   {t.submit}
