@@ -3,9 +3,10 @@
 import React from "react"
 import { useState, useEffect, useRef, useCallback, useMemo } from 'react'
 import Link from 'next/link'
+import { useRouter } from 'next/navigation'
 import Image from 'next/image'
 import { MainLayout, useLocale } from '@/components/layout/main-layout'
-import { type Artwork, artistBio, getStatusLabel } from '@/lib/artworks'
+import { type Artwork, artworks as staticArtworks, artistBio, getStatusLabel } from '@/lib/artworks'
 import { useArtwork, useArtworks } from '@/lib/use-artworks'
 
 /* ─── Career Timeline ─── */
@@ -256,19 +257,19 @@ function DesktopZoomViewer({
         </svg>
       </button>
 
-      {/* Title + year — always visible once faded in */}
+      {/* Title + year — visible in contemplative, hidden on zoom */}
       <div
         className="absolute bottom-8 left-8 z-10 pointer-events-none"
         style={{
-          opacity: showClose ? (contemplative ? 0.4 : 0.3) : 0,
+          opacity: (showClose && contemplative) ? 0.5 : 0,
           transition: 'opacity 800ms var(--ease-out)',
         }}
       >
-        <p className="font-display text-2xl text-white">{title}</p>
-        <p className="font-body text-xs text-white/60 mt-1">{year}</p>
+        <p className="font-display text-4xl sm:text-5xl text-white">{title}</p>
+        <p className="font-body text-lg text-white/60 mt-2">{year}</p>
       </div>
 
-      {/* Contemplative hint — center bottom, only in contemplative mode */}
+      {/* Contemplative hint — center bottom, only in contemplative */}
       <div
         className="absolute bottom-8 left-1/2 -translate-x-1/2 z-10 pointer-events-none"
         style={{
@@ -564,16 +565,16 @@ function MobileZoomViewer({
         </div>
       </button>
 
-      {/* Title + year — always visible once faded in */}
+      {/* Title + year — visible in contemplative, hidden on zoom */}
       <div
         className="absolute bottom-8 left-6 z-20 pointer-events-none"
         style={{
-          opacity: showClose ? (contemplative ? 0.4 : 0.3) : 0,
+          opacity: (showClose && contemplative) ? 0.5 : 0,
           transition: 'opacity 800ms var(--ease-out)',
         }}
       >
-        <p className="font-display text-xl text-white">{title}</p>
-        <p className="font-body text-xs text-white/60 mt-1">{year}</p>
+        <p className="font-display text-3xl text-white">{title}</p>
+        <p className="font-body text-base text-white/60 mt-2">{year}</p>
       </div>
 
       {/* Pinch hint — only in contemplative mode, replaces old auto-hide */}
@@ -956,6 +957,7 @@ function RelatedWorks({
 
 export default function ArtworkDetailContent({ artwork }: { artwork: Artwork }) {
   const { locale } = useLocale()
+  const router = useRouter()
   const [isModalOpen, setIsModalOpen] = useState(false)
   const [isZoomOpen, setIsZoomOpen] = useState(false)
   const [isVisible, setIsVisible] = useState(false)
@@ -963,6 +965,31 @@ export default function ArtworkDetailContent({ artwork }: { artwork: Artwork }) 
   // Live-refresh artwork status from API
   const liveArtwork = useArtwork(artwork.id)
   const currentArtwork = liveArtwork ?? artwork
+
+  // Prev/next navigation
+  const allArtworks = useArtworks()
+  const currentIndex = allArtworks.findIndex(a => a.id === artwork.id)
+  const prevArtwork = currentIndex > 0 ? allArtworks[currentIndex - 1] : null
+  const nextArtwork = currentIndex < allArtworks.length - 1 ? allArtworks[currentIndex + 1] : null
+
+  // Save current artwork ID for gallery scroll restore
+  useEffect(() => {
+    sessionStorage.setItem('gallery-scroll-to', artwork.id)
+  }, [artwork.id])
+
+  // Keyboard navigation (arrow keys)
+  useEffect(() => {
+    const onKeyDown = (e: KeyboardEvent) => {
+      if (isZoomOpen || isModalOpen) return
+      if (e.key === 'ArrowLeft' && prevArtwork) {
+        router.push(`/obra/${prevArtwork.id}`)
+      } else if (e.key === 'ArrowRight' && nextArtwork) {
+        router.push(`/obra/${nextArtwork.id}`)
+      }
+    }
+    window.addEventListener('keydown', onKeyDown)
+    return () => window.removeEventListener('keydown', onKeyDown)
+  }, [prevArtwork, nextArtwork, isZoomOpen, isModalOpen, router])
 
   useEffect(() => {
     const timer = setTimeout(() => setIsVisible(true), 50)
@@ -1033,14 +1060,76 @@ export default function ArtworkDetailContent({ artwork }: { artwork: Artwork }) 
           {locale === 'es' ? currentArtwork.title : currentArtwork.titleEn}
         </h1>
 
-        {/* ── Artwork image — gallery wall ── */}
+        {/* ── Artwork image — gallery wall with navigation ── */}
         <div
-          className="mb-14 sm:mb-20"
+          className="mb-14 sm:mb-20 relative"
           style={{
             opacity: isVisible ? 1 : 0,
             transition: 'opacity var(--motion-reveal) var(--ease-out) 200ms',
           }}
         >
+          {/* Prev arrow */}
+          {prevArtwork && (
+            <Link
+              href={`/obra/${prevArtwork.id}`}
+              className="hidden lg:flex absolute left-0 top-1/2 -translate-y-1/2 -translate-x-full pr-6 z-10 items-center gap-2 group"
+              aria-label={locale === 'es' ? `Anterior: ${prevArtwork.title}` : `Previous: ${prevArtwork.titleEn}`}
+            >
+              <span className="w-10 h-10 rounded-full border border-[hsl(var(--border))] flex items-center justify-center text-[hsl(var(--foreground-muted))] group-hover:border-[hsl(var(--accent))] group-hover:text-[hsl(var(--accent))]"
+                style={{ transition: 'border-color var(--motion-fast) var(--ease-out), color var(--motion-fast) var(--ease-out)' }}
+              >
+                <svg viewBox="0 0 24 24" className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth="1.5">
+                  <path d="M19 12H5M5 12L12 19M5 12L12 5" />
+                </svg>
+              </span>
+            </Link>
+          )}
+
+          {/* Next arrow */}
+          {nextArtwork && (
+            <Link
+              href={`/obra/${nextArtwork.id}`}
+              className="hidden lg:flex absolute right-0 top-1/2 -translate-y-1/2 translate-x-full pl-6 z-10 items-center gap-2 group"
+              aria-label={locale === 'es' ? `Siguiente: ${nextArtwork.title}` : `Next: ${nextArtwork.titleEn}`}
+            >
+              <span className="w-10 h-10 rounded-full border border-[hsl(var(--border))] flex items-center justify-center text-[hsl(var(--foreground-muted))] group-hover:border-[hsl(var(--accent))] group-hover:text-[hsl(var(--accent))]"
+                style={{ transition: 'border-color var(--motion-fast) var(--ease-out), color var(--motion-fast) var(--ease-out)' }}
+              >
+                <svg viewBox="0 0 24 24" className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth="1.5">
+                  <path d="M5 12H19M19 12L12 5M19 12L12 19" />
+                </svg>
+              </span>
+            </Link>
+          )}
+
+          {/* Mobile prev/next bar */}
+          <div className="flex lg:hidden justify-between items-center mb-4">
+            {prevArtwork ? (
+              <Link
+                href={`/obra/${prevArtwork.id}`}
+                className="inline-flex items-center gap-2 text-[hsl(var(--foreground-muted))] hover:text-[hsl(var(--accent))]"
+                style={{ transition: 'color var(--motion-fast) var(--ease-out)' }}
+              >
+                <svg viewBox="0 0 24 24" className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth="1.5">
+                  <path d="M19 12H5M5 12L12 19M5 12L12 5" />
+                </svg>
+                <span className="font-body text-xs">{locale === 'es' ? 'Anterior' : 'Previous'}</span>
+              </Link>
+            ) : <span />}
+            {nextArtwork ? (
+              <Link
+                href={`/obra/${nextArtwork.id}`}
+                className="inline-flex items-center gap-2 text-[hsl(var(--foreground-muted))] hover:text-[hsl(var(--accent))]"
+                style={{ transition: 'color var(--motion-fast) var(--ease-out)' }}
+              >
+                <span className="font-body text-xs">{locale === 'es' ? 'Siguiente' : 'Next'}</span>
+                <svg viewBox="0 0 24 24" className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth="1.5">
+                  <path d="M5 12H19M19 12L12 5M19 12L12 19" />
+                </svg>
+              </Link>
+            ) : <span />}
+          </div>
+
           <button
             onClick={() => setIsZoomOpen(true)}
             className="group relative w-full cursor-zoom-in"

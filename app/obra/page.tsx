@@ -28,6 +28,7 @@ function WorkRow({
   return (
     <Link
       href={`/obra/${artwork.id}`}
+      data-artwork-id={artwork.id}
       className="group flex flex-wrap items-baseline gap-3 sm:gap-6 py-3 sm:py-4 border-b border-[hsl(var(--border))] hover:bg-[hsl(var(--muted))]"
       style={{
         opacity: isVisible ? 1 : 0,
@@ -140,6 +141,7 @@ function ArtworkCard({
     <Link
       ref={ref}
       href={`/obra/${artwork.id}`}
+      data-artwork-id={artwork.id}
       className="group block"
       style={{
         ...gridStyle,
@@ -219,6 +221,21 @@ function GalleryContent() {
   useEffect(() => {
     const timer = setTimeout(() => setIsVisible(true), 50)
     return () => clearTimeout(timer)
+  }, [])
+
+  // Scroll restore: when returning from artwork detail, scroll to the last viewed artwork
+  useEffect(() => {
+    const scrollToId = sessionStorage.getItem('gallery-scroll-to')
+    if (!scrollToId) return
+    sessionStorage.removeItem('gallery-scroll-to')
+    // Wait for DOM to render
+    const raf = requestAnimationFrame(() => {
+      const el = document.querySelector(`[data-artwork-id="${scrollToId}"]`)
+      if (el) {
+        el.scrollIntoView({ block: 'center', behavior: 'instant' })
+      }
+    })
+    return () => cancelAnimationFrame(raf)
   }, [])
 
   // Artworks filtered by series only (used for contextual status counts)
