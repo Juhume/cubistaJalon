@@ -83,6 +83,8 @@ function Header({ locale, onLocaleChange }: { locale: Locale; onLocaleChange: (l
   const textPrimary = useLightText ? 'hsl(var(--foreground-light))' : 'hsl(var(--foreground))'
   const textSecondary = useLightText ? 'hsl(var(--foreground-light-muted))' : 'hsl(var(--foreground-muted))'
   const textDivider = useLightText ? 'hsl(var(--foreground-light-muted))' : 'hsl(var(--border-strong))'
+  // Subtle shadow for readability over hero image bright spots
+  const textShadow = useLightText ? '0 1px 3px rgba(0,0,0,0.5)' : 'none'
 
   return (
     <>
@@ -102,7 +104,7 @@ function Header({ locale, onLocaleChange }: { locale: Locale; onLocaleChange: (l
             <Link href="/" className="relative group flex-shrink-0">
               <span
                 className="font-display text-lg sm:text-xl"
-                style={{ color: textPrimary, transition: `color var(--motion-normal) var(--ease-out)` }}
+                style={{ color: textPrimary, textShadow, transition: `color var(--motion-normal) var(--ease-out), text-shadow var(--motion-normal) var(--ease-out)` }}
               >
                 Cubista Jalón
               </span>
@@ -124,7 +126,8 @@ function Header({ locale, onLocaleChange }: { locale: Locale; onLocaleChange: (l
                       className="font-body text-sm"
                       style={{
                         color: isActive ? textPrimary : textSecondary,
-                        transition: `color var(--motion-normal) var(--ease-out)`,
+                        textShadow,
+                        transition: `color var(--motion-normal) var(--ease-out), text-shadow var(--motion-normal) var(--ease-out)`,
                       }}
                     >
                       {item.label[locale]}
@@ -154,18 +157,20 @@ function Header({ locale, onLocaleChange }: { locale: Locale; onLocaleChange: (l
                   className="px-2.5 py-2 cursor-pointer"
                   style={{
                     color: locale === 'es' ? textPrimary : textSecondary,
-                    transition: `color var(--motion-normal) var(--ease-out)`,
+                    textShadow,
+                    transition: `color var(--motion-normal) var(--ease-out), text-shadow var(--motion-normal) var(--ease-out)`,
                   }}
                 >
                   Es
                 </button>
-                <span style={{ color: textDivider, transition: `color var(--motion-normal) var(--ease-out)` }}>/</span>
+                <span style={{ color: textDivider, textShadow, transition: `color var(--motion-normal) var(--ease-out), text-shadow var(--motion-normal) var(--ease-out)` }}>/</span>
                 <button
                   onClick={() => onLocaleChange('en')}
                   className="px-2.5 py-2 cursor-pointer"
                   style={{
                     color: locale === 'en' ? textPrimary : textSecondary,
-                    transition: `color var(--motion-normal) var(--ease-out)`,
+                    textShadow,
+                    transition: `color var(--motion-normal) var(--ease-out), text-shadow var(--motion-normal) var(--ease-out)`,
                   }}
                 >
                   En
@@ -176,6 +181,7 @@ function Header({ locale, onLocaleChange }: { locale: Locale; onLocaleChange: (l
               <button
                 onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
                 className="lg:hidden relative w-10 h-10 flex items-center justify-center"
+                style={{ filter: useLightText ? 'drop-shadow(0 1px 2px rgba(0,0,0,0.5))' : 'none', transition: `filter var(--motion-normal) var(--ease-out)` }}
                 aria-expanded={isMobileMenuOpen}
                 aria-controls="mobile-menu"
                 aria-label={isMobileMenuOpen

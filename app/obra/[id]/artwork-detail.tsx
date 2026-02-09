@@ -966,11 +966,21 @@ export default function ArtworkDetailContent({ artwork }: { artwork: Artwork }) 
   const liveArtwork = useArtwork(artwork.id)
   const currentArtwork = liveArtwork ?? artwork
 
-  // Prev/next navigation
+  // Prev/next navigation — respects gallery context (filters, order)
   const allArtworks = useArtworks()
-  const currentIndex = allArtworks.findIndex(a => a.id === artwork.id)
-  const prevArtwork = currentIndex > 0 ? allArtworks[currentIndex - 1] : null
-  const nextArtwork = currentIndex < allArtworks.length - 1 ? allArtworks[currentIndex + 1] : null
+  const navList = useMemo(() => {
+    try {
+      const ids: string[] = JSON.parse(sessionStorage.getItem('gallery-nav-ids') || '[]')
+      if (ids.length > 1) {
+        const mapped = ids.map(id => allArtworks.find(a => a.id === id)).filter(Boolean) as Artwork[]
+        if (mapped.length > 1) return mapped
+      }
+    } catch {}
+    return allArtworks
+  }, [allArtworks])
+  const currentIndex = navList.findIndex(a => a.id === artwork.id)
+  const prevArtwork = currentIndex > 0 ? navList[currentIndex - 1] : null
+  const nextArtwork = currentIndex < navList.length - 1 ? navList[currentIndex + 1] : null
 
   // Save current artwork ID for gallery scroll restore
   useEffect(() => {

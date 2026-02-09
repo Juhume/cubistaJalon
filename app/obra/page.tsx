@@ -205,6 +205,8 @@ function GalleryContent() {
   const [showOnlyAvailable, setShowOnlyAvailable] = useState(() => {
     return searchParams.get('estado') === 'available'
   })
+  const [sortMode, setSortMode] = useState<'catalogue' | 'year' | 'size'>('catalogue')
+  const [sortDir, setSortDir] = useState<'asc' | 'desc'>('asc')
   const [hoveredArtwork, setHoveredArtwork] = useState<Artwork | null>(null)
   const [isVisible, setIsVisible] = useState(false)
 
@@ -251,6 +253,26 @@ function GalleryContent() {
     return seriesFiltered.filter(a => a.status === 'available')
   }, [seriesFiltered, showOnlyAvailable])
 
+  // Sort filtered artworks by selected mode
+  const sortedArtworks = useMemo(() => {
+    if (sortMode === 'catalogue') return filteredArtworks
+    const sorted = [...filteredArtworks].sort((a, b) => {
+      if (sortMode === 'year') return a.year - b.year
+      // Parse "150 x 120 cm" → area
+      const area = (d: string) => {
+        const m = d.match(/(\d+)\s*x\s*(\d+)/)
+        return m ? parseInt(m[1]) * parseInt(m[2]) : 0
+      }
+      return area(a.dimensions) - area(b.dimensions)
+    })
+    return sortDir === 'desc' ? sorted.reverse() : sorted
+  }, [filteredArtworks, sortMode, sortDir])
+
+  // Save navigation context so artwork detail prev/next follows this order
+  useEffect(() => {
+    sessionStorage.setItem('gallery-nav-ids', JSON.stringify(sortedArtworks.map(a => a.id)))
+  }, [sortedArtworks])
+
   // Count available works in current series filter
   const availableCount = useMemo(() => {
     return seriesFiltered.filter(a => a.status === 'available').length
@@ -259,19 +281,37 @@ function GalleryContent() {
   function resetFilters() {
     setSelectedSeries('all')
     setShowOnlyAvailable(false)
+    setSortMode('catalogue')
     updateURL('all', false)
+  }
+
+  // Three-state toggle: off → asc → desc → off
+  function handleSortClick(mode: 'year' | 'size') {
+    if (sortMode !== mode) {
+      setSortMode(mode)
+      setSortDir('asc')
+    } else if (sortDir === 'asc') {
+      setSortDir('desc')
+    } else {
+      setSortMode('catalogue')
+      setSortDir('asc')
+    }
   }
 
   const content = {
     es: {
       title: 'Catálogo',
       filterLabel: 'Serie',
+      sortYear: 'Año',
+      sortSize: 'Tamaño',
       noResults: 'No hay obras con estos filtros.',
       resetFilters: 'Ver todo el catálogo',
     },
     en: {
       title: 'Catalogue',
       filterLabel: 'Series',
+      sortYear: 'Year',
+      sortSize: 'Size',
       noResults: 'No works match these filters.',
       resetFilters: 'View full catalogue',
     },
@@ -360,8 +400,9 @@ function GalleryContent() {
             <div className="absolute right-0 top-0 bottom-0 w-8 bg-gradient-to-l from-[hsl(var(--background))] to-transparent pointer-events-none sm:hidden" />
           </div>
 
-          {/* Availability toggle */}
-          <div className="flex items-center mt-4 sm:mt-5">
+          {/* Controls row: availability toggle + sort buttons */}
+          <div className="flex flex-wrap items-center justify-between gap-4 mt-4 sm:mt-5">
+            {/* Availability toggle */}
             <button
               role="switch"
               aria-checked={showOnlyAvailable}
@@ -400,6 +441,47 @@ function GalleryContent() {
                 <span className="ml-1.5 text-xs opacity-50">{availableCount}</span>
               </span>
             </button>
+
+            {/* Sort buttons */}
+            <div
+              role="group"
+              aria-label={locale === 'es' ? 'Ordenar obras' : 'Sort works'}
+              className="flex items-center gap-1"
+            >
+              {(['year', 'size'] as const).map((mode) => {
+                const label = mode === 'year' ? t.sortYear : t.sortSize
+                const isActive = sortMode === mode
+                return (
+                  <button
+                    key={mode}
+                    onClick={() => handleSortClick(mode)}
+                    aria-pressed={isActive}
+                    className="font-body text-sm py-1.5 px-3 cursor-pointer inline-flex items-center gap-1.5"
+                    style={{
+                      color: isActive ? 'hsl(var(--foreground))' : 'hsl(var(--foreground-muted))',
+                      backgroundColor: isActive ? 'hsl(var(--foreground) / 0.06)' : 'transparent',
+                      transition: 'color var(--motion-fast) var(--ease-out), background-color var(--motion-fast) var(--ease-out)',
+                    }}
+                  >
+                    {label}
+                    <svg
+                      viewBox="0 0 12 12"
+                      className="w-3 h-3"
+                      fill="none"
+                      stroke="currentColor"
+                      strokeWidth="1.5"
+                      style={{
+                        opacity: isActive ? 1 : 0.4,
+                        transform: isActive && sortDir === 'desc' ? 'rotate(180deg)' : 'none',
+                        transition: 'transform var(--motion-fast) var(--ease-out), opacity var(--motion-fast) var(--ease-out)',
+                      }}
+                    >
+                      <path d="M6 9V3M6 3L3 6M6 3L9 6" />
+                    </svg>
+                  </button>
+                )
+              })}
+            </div>
           </div>
         </div>
 
@@ -407,33 +489,50 @@ function GalleryContent() {
         <div className="hidden lg:grid lg:grid-cols-12 gap-8 lg:gap-12 pb-16 sm:pb-24">
           {/* Work list */}
           <div className="lg:col-span-7">
-            {groupedArtworks.length > 0 ? (
-              groupedArtworks.map((group) => (
-                <div key={group.series} className="mb-8">
-                  {selectedSeries === 'all' && group.series && (
-                    <h2 className="flex items-center gap-2 font-body text-xs tracking-[0.08em] uppercase text-[hsl(var(--ultra))] mb-3 mt-6 first:mt-0">
-                      <span className="inline-block w-2 h-2 bg-[hsl(var(--accent))]" aria-hidden="true" />
-                      {locale === 'es' ? group.series : group.seriesEn}
-                    </h2>
-                  )}
+            {sortedArtworks.length > 0 ? (
+              sortMode === 'catalogue' ? (
+                /* Grouped by series when in curated mode */
+                groupedArtworks.map((group) => (
+                  <div key={group.series} className="mb-8">
+                    {selectedSeries === 'all' && group.series && (
+                      <h2 className="flex items-center gap-2 font-body text-xs tracking-[0.08em] uppercase text-[hsl(var(--ultra))] mb-3 mt-6 first:mt-0">
+                        <span className="inline-block w-2 h-2 bg-[hsl(var(--accent))]" aria-hidden="true" />
+                        {locale === 'es' ? group.series : group.seriesEn}
+                      </h2>
+                    )}
 
-                  <div className={selectedSeries === 'all' ? '' : 'border-t border-[hsl(var(--foreground))]'}>
-                    {group.works.map((artwork) => {
-                      const idx = globalIndex++
-                      return (
-                        <WorkRow
-                          key={artwork.id}
-                          artwork={artwork}
-                          locale={locale}
-                          index={idx}
-                          onHover={setHoveredArtwork}
-                          isVisible={isVisible}
-                        />
-                      )
-                    })}
+                    <div className={selectedSeries === 'all' ? '' : 'border-t border-[hsl(var(--foreground))]'}>
+                      {group.works.map((artwork) => {
+                        const idx = globalIndex++
+                        return (
+                          <WorkRow
+                            key={artwork.id}
+                            artwork={artwork}
+                            locale={locale}
+                            index={idx}
+                            onHover={setHoveredArtwork}
+                            isVisible={isVisible}
+                          />
+                        )
+                      })}
+                    </div>
                   </div>
+                ))
+              ) : (
+                /* Flat list when sorting by year or size */
+                <div className="border-t border-[hsl(var(--foreground))]">
+                  {sortedArtworks.map((artwork, idx) => (
+                    <WorkRow
+                      key={artwork.id}
+                      artwork={artwork}
+                      locale={locale}
+                      index={idx}
+                      onHover={setHoveredArtwork}
+                      isVisible={isVisible}
+                    />
+                  ))}
                 </div>
-              ))
+              )
             ) : (
               <div className="py-12 text-center space-y-4">
                 <p className="font-body text-sm text-[hsl(var(--foreground-muted))]">
@@ -467,10 +566,10 @@ function GalleryContent() {
                   className="object-cover"
                   sizes="40vw"
                 />
-              ) : filteredArtworks[0] ? (
+              ) : sortedArtworks[0] ? (
                 <Image
-                  src={filteredArtworks[0].imageUrl}
-                  alt={locale === 'es' ? filteredArtworks[0].title : filteredArtworks[0].titleEn}
+                  src={sortedArtworks[0].imageUrl}
+                  alt={locale === 'es' ? sortedArtworks[0].title : sortedArtworks[0].titleEn}
                   fill
                   className="object-cover"
                   sizes="40vw"
@@ -489,12 +588,12 @@ function GalleryContent() {
 
         {/* ─── Tablet & Mobile: image card grid ─── */}
         <div className="lg:hidden pb-16 sm:pb-24">
-          {filteredArtworks.length > 0 ? (
+          {sortedArtworks.length > 0 ? (
             <div
               className="grid grid-cols-2 sm:grid-cols-6 gap-3 sm:gap-4"
               style={{ gridAutoFlow: 'dense' }}
             >
-              {filteredArtworks.map((artwork, index) => (
+              {sortedArtworks.map((artwork, index) => (
                 <ArtworkCard
                   key={artwork.id}
                   artwork={artwork}
